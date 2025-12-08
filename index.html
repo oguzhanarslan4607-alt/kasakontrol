@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="tr" class="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,9 +7,33 @@
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        dark: {
+                            bg: '#111827',
+                            card: '#1f2937',
+                            border: '#374151',
+                            text: '#f3f4f6',
+                            muted: '#9ca3af'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
     
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Chart.js (Grafikler İçin) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Tesseract.js (OCR İçin) -->
+    <script src='https://unpkg.com/tesseract.js@v2.1.0/dist/tesseract.min.js'></script>
 
     <style>
         /* Özel Scrollbar */
@@ -18,13 +42,16 @@
         ::-webkit-scrollbar-thumb { background: #c7c7c7; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #a0a0a0; }
         
+        .dark ::-webkit-scrollbar-track { background: #1f2937; }
+        .dark ::-webkit-scrollbar-thumb { background: #4b5563; }
+
         .loader {
             border: 3px solid #f3f3f3;
             border-radius: 50%;
             border-top: 3px solid #4f46e5;
             width: 20px;
             height: 20px;
-            -webkit-animation: spin 1s linear infinite; /* Safari */
+            -webkit-animation: spin 1s linear infinite;
             animation: spin 1s linear infinite;
         }
         @keyframes spin {
@@ -33,10 +60,14 @@
         }
         
         /* Takvim Stilleri */
-        .calendar-day { transition: all 0.2s; min-height: 80px; display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start; padding: 4px; border: 1px solid #f3f4f6; }
+        .calendar-day { transition: all 0.2s; min-height: 80px; display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start; padding: 4px; border: 1px solid #e5e7eb; }
+        .dark .calendar-day { border-color: #374151; }
         .calendar-day:hover { background-color: #f9fafb; }
+        .dark .calendar-day:hover { background-color: #374151; }
         .calendar-day.selected { border: 2px solid #4f46e5; background-color: #eef2ff; }
+        .dark .calendar-day.selected { background-color: #312e81; border-color: #6366f1; }
         .calendar-day.today { background-color: #fff7ed; font-weight: bold; }
+        .dark .calendar-day.today { background-color: #431407; }
         
         .has-expense-indicator {
             margin-top: auto;
@@ -49,42 +80,46 @@
         .dot { width: 6px; height: 6px; border-radius: 50%; background-color: #4f46e5; }
     </style>
 </head>
-<body class="bg-gray-50 font-sans text-gray-800 min-h-screen">
+<body class="bg-gray-50 dark:bg-gray-900 font-sans text-gray-800 dark:text-gray-100 min-h-screen transition-colors duration-200">
 
     <!-- Header -->
-    <header class="bg-white border-b border-gray-200 sticky top-0 z-20">
-        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+    <header class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-20 transition-colors duration-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
             <div class="flex items-center gap-2">
                 <div class="bg-indigo-600 p-2 rounded-lg">
                     <i data-lucide="receipt" class="w-5 h-5 text-white"></i>
                 </div>
-                <h1 class="text-xl font-bold text-gray-900 tracking-tight hidden sm:block">Gider Takip</h1>
+                <h1 class="text-xl font-bold text-gray-900 dark:text-white tracking-tight hidden sm:block">Gider Takip</h1>
             </div>
             <div class="flex items-center gap-2 overflow-x-auto">
-                <div class="flex bg-gray-100 rounded-lg p-1">
-                    <button id="btn-view-active" class="px-3 py-1.5 text-sm font-medium rounded-md transition-all bg-white text-gray-900 shadow-sm flex items-center gap-1">
+                <div class="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
+                    <button id="btn-view-active" class="px-3 py-1.5 text-sm font-medium rounded-md transition-all bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm flex items-center gap-1">
                         <i data-lucide="list" class="w-4 h-4"></i> Giderler
                     </button>
-                    <button id="btn-view-reports" class="px-3 py-1.5 text-sm font-medium rounded-md transition-all text-gray-500 hover:text-gray-700 flex items-center gap-1">
+                    <button id="btn-view-reports" class="px-3 py-1.5 text-sm font-medium rounded-md transition-all text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-white flex items-center gap-1">
                         <i data-lucide="bar-chart-3" class="w-4 h-4"></i> Raporlar
                     </button>
-                    <button id="btn-view-calendar" class="px-3 py-1.5 text-sm font-medium rounded-md transition-all text-gray-500 hover:text-gray-700 flex items-center gap-1">
+                    <button id="btn-view-calendar" class="px-3 py-1.5 text-sm font-medium rounded-md transition-all text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-white flex items-center gap-1">
                         <i data-lucide="calendar" class="w-4 h-4"></i> Takvim
                     </button>
-                    <button id="btn-view-trash" class="px-3 py-1.5 text-sm font-medium rounded-md flex items-center gap-1 transition-all text-gray-500 hover:text-gray-700">
+                    <button id="btn-view-trash" class="px-3 py-1.5 text-sm font-medium rounded-md flex items-center gap-1 transition-all text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-white">
                         <i data-lucide="trash-2" class="w-4 h-4"></i> Çöp
                     </button>
                 </div>
+                <!-- Dark Mode Toggle -->
+                <button onclick="toggleTheme()" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 transition-colors">
+                    <i id="theme-icon" data-lucide="moon" class="w-5 h-5"></i>
+                </button>
             </div>
         </div>
     </header>
 
-    <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         
         <!-- Yükleniyor Göstergesi -->
-        <div id="page-loader" class="fixed inset-0 bg-white z-50 flex flex-col items-center justify-center">
+        <div id="page-loader" class="fixed inset-0 bg-white dark:bg-gray-900 z-50 flex flex-col items-center justify-center">
             <div class="loader w-10 h-10 border-4 border-t-indigo-600 mb-4"></div>
-            <p class="text-gray-500">Sistem Yükleniyor...</p>
+            <p class="text-gray-500 dark:text-gray-400">Sistem Yükleniyor...</p>
         </div>
 
         <!-- ANA GİDER LİSTESİ VE FORM GÖRÜNÜMÜ -->
@@ -94,13 +129,13 @@
             <div class="lg:col-span-1">
                 <!-- Normal Form -->
                 <div id="form-section">
-                    <div id="form-card" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden sticky top-24 transition-colors">
-                        <div id="form-header" class="bg-gray-50 px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+                    <div id="form-card" class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden sticky top-24 transition-colors">
+                        <div id="form-header" class="bg-gray-50 dark:bg-gray-700/50 px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
                             <div class="flex items-center gap-2">
-                                <i id="form-icon" data-lucide="plus" class="w-5 h-5 text-gray-500"></i>
-                                <h3 id="form-title" class="font-semibold text-gray-900">Yeni Fiş Ekle</h3>
+                                <i id="form-icon" data-lucide="plus" class="w-5 h-5 text-gray-500 dark:text-gray-400"></i>
+                                <h3 id="form-title" class="font-semibold text-gray-900 dark:text-white">Yeni Fiş Ekle</h3>
                             </div>
-                            <button id="btn-cancel-edit" class="hidden text-xs text-red-600 hover:text-red-800 font-medium flex items-center gap-1">
+                            <button id="btn-cancel-edit" class="hidden text-xs text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 font-medium flex items-center gap-1">
                                 <i data-lucide="x-circle" class="w-4 h-4"></i> İptal
                             </button>
                         </div>
@@ -108,28 +143,28 @@
                         <form id="expense-form" class="p-6 space-y-4">
                             <input type="hidden" id="editing-id">
 
-                            <div id="error-msg" class="hidden p-3 bg-red-50 text-red-700 text-sm rounded-lg flex items-center gap-2">
+                            <div id="error-msg" class="hidden p-3 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 text-sm rounded-lg flex items-center gap-2">
                                 <i data-lucide="alert-circle" class="w-4 h-4"></i> <span></span>
                             </div>
 
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Fiş Tarihi</label>
-                                <input type="date" id="expense-date" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Fiş Tarihi</label>
+                                <input type="date" id="expense-date" required class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Fiş No</label>
-                                <input type="text" id="receipt-no" placeholder="Örn: TR-2024-001" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Fiş No</label>
+                                <input type="text" id="receipt-no" placeholder="Örn: TR-2024-001" required class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Tutar (TL)</label>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tutar (TL)</label>
                                 <div class="relative">
                                     <span class="absolute left-3 top-2 text-gray-400">₺</span>
-                                    <input type="number" id="amount" step="0.01" placeholder="0.00" required class="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                                    <input type="number" id="amount" step="0.01" placeholder="0.00" required class="w-full pl-8 pr-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
                                 </div>
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Gider Kalemi</label>
-                                <select id="category" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-white outline-none">
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Gider Kalemi</label>
+                                <select id="category" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
                                     <option value="Ofis">Ofis Giderleri</option>
                                     <option value="Yemek">Yemek & İkram</option>
                                     <option value="Ulaşım">Ulaşım & Yakıt</option>
@@ -139,26 +174,37 @@
                                 </select>
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Açıklama</label>
-                                <input type="text" id="description" placeholder="Opsiyonel" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
-                            </div>
-                            
-                            <!-- Dosya Yükleme -->
-                            <div>
-                                <label id="file-label" class="block text-sm font-medium text-gray-700 mb-1">PDF / Görsel (Max 4MB)</label>
-                                <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-indigo-500 transition-colors bg-gray-50 hover:bg-white cursor-pointer relative">
-                                    <input id="file-upload" type="file" accept=".pdf, .jpg, .png, .jpeg" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
-                                    <div class="space-y-1 text-center pointer-events-none" id="file-display-area">
-                                        <i data-lucide="upload" class="mx-auto h-8 w-8 text-gray-400"></i>
-                                        <div class="flex text-sm text-gray-600 justify-center mt-2">
-                                            <span class="font-medium text-indigo-600">Dosya Seç</span>
-                                        </div>
-                                        <p class="text-xs text-gray-400 mt-1">Yüksek boyutlu dosyalar otomatik parçalanır</p>
-                                    </div>
-                                </div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Açıklama</label>
+                                <input type="text" id="description" placeholder="Opsiyonel" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
                             </div>
 
-                            <button type="submit" id="btn-submit" class="w-full bg-gray-900 hover:bg-gray-800 text-white py-2.5 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                            <!-- Dosya Yükleme & OCR (Açıklama Altına Taşındı) -->
+                            <div>
+                                <label id="file-label" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">PDF / Görsel (OCR Destekli)</label>
+                                <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 dark:border-gray-600 border-dashed rounded-lg hover:border-indigo-500 dark:hover:border-indigo-400 transition-colors bg-gray-50 dark:bg-gray-900 hover:bg-white dark:hover:bg-gray-800 cursor-pointer relative group">
+                                    <input id="file-upload" type="file" accept=".pdf, .jpg, .png, .jpeg" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
+                                    <div class="space-y-1 text-center pointer-events-none" id="file-display-area">
+                                        <i data-lucide="upload" class="mx-auto h-8 w-8 text-gray-400"></i>
+                                        <div class="flex text-sm text-gray-600 dark:text-gray-400 justify-center mt-2">
+                                            <span class="font-medium text-indigo-600 dark:text-indigo-400 group-hover:text-indigo-500">Dosya Seç</span>
+                                        </div>
+                                        <p class="text-xs text-gray-400">PNG, JPG, PDF (Max 4MB)</p>
+                                    </div>
+                                </div>
+                                <!-- OCR Butonu -->
+                                <button type="button" id="btn-ocr" onclick="runOCR()" class="mt-2 w-full text-xs flex items-center justify-center gap-1 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 py-1.5 rounded border border-indigo-200 dark:border-indigo-800 disabled:opacity-50" disabled>
+                                    <i data-lucide="scan-line" class="w-3 h-3"></i> Yapay Zeka ile Tara (Fiş No, Tarih, Tutar)
+                                </button>
+                                <div id="ocr-status" class="text-xs text-center mt-1 text-gray-500 hidden"></div>
+                            </div>
+
+                            <!-- Tekrarlayan Gider -->
+                            <div class="flex items-center gap-2">
+                                <input type="checkbox" id="is-recurring" class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
+                                <label for="is-recurring" class="text-sm text-gray-700 dark:text-gray-300">Her Ay Tekrarla (Otomatik)</label>
+                            </div>
+
+                            <button type="submit" id="btn-submit" class="w-full bg-gray-900 dark:bg-indigo-600 hover:bg-gray-800 dark:hover:bg-indigo-700 text-white py-2.5 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                                 <span>Gideri Kaydet</span>
                             </button>
                         </form>
@@ -167,12 +213,12 @@
 
                 <!-- Sol Panel Çöp Kutusu Bilgisi -->
                 <div class="hidden" id="trash-info-left">
-                    <div class="bg-red-50 border border-red-100 rounded-xl p-6 sticky top-24">
+                    <div class="bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 rounded-xl p-6 sticky top-24">
                         <div class="flex items-center gap-3 mb-2">
-                            <i data-lucide="trash-2" class="w-6 h-6 text-red-600"></i>
-                            <h3 class="font-bold text-red-900">Çöp Kutusu</h3>
+                            <i data-lucide="trash-2" class="w-6 h-6 text-red-600 dark:text-red-400"></i>
+                            <h3 class="font-bold text-red-900 dark:text-red-300">Çöp Kutusu</h3>
                         </div>
-                        <p class="text-sm text-red-700">Buradaki kayıtlar sistemden silinmek üzere işaretlenmiştir. Geri yükleyebilir veya kalıcı olarak silebilirsiniz.</p>
+                        <p class="text-sm text-red-700 dark:text-red-400">Buradaki kayıtlar sistemden silinmek üzere işaretlenmiştir. Geri yükleyebilir veya kalıcı olarak silebilirsiniz.</p>
                     </div>
                 </div>
             </div>
@@ -181,63 +227,66 @@
             <div class="lg:col-span-2 space-y-4">
                 
                 <!-- ARAMA VE FİLTRELEME PANELİ -->
-                <div id="search-panel" class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 space-y-3">
+                <div id="search-panel" class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 space-y-3">
                     <div class="flex items-center justify-between">
-                        <h3 class="font-semibold text-gray-900 flex items-center gap-2"><i data-lucide="search" class="w-4 h-4"></i> Arama & Filtreleme</h3>
-                        <button id="btn-clear-filter" class="text-xs text-red-600 hover:underline hidden">Filtreyi Temizle</button>
+                        <h3 class="font-semibold text-gray-900 dark:text-white flex items-center gap-2"><i data-lucide="search" class="w-4 h-4"></i> Arama & Filtreleme</h3>
+                        <button id="btn-clear-filter" class="text-xs text-red-600 dark:text-red-400 hover:underline hidden">Filtreyi Temizle</button>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
                         <div class="md:col-span-5 relative">
                             <i data-lucide="search" class="absolute left-3 top-2.5 w-4 h-4 text-gray-400"></i>
-                            <input type="text" id="search-input" placeholder="Fiş No, Açıklama veya Kategori ara..." class="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                            <input type="text" id="search-input" placeholder="Fiş No, Açıklama veya Kategori ara..." class="w-full pl-9 pr-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
                         </div>
                         <div class="md:col-span-3">
-                            <input type="date" id="filter-start-date" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none" title="Başlangıç Tarihi">
+                            <input type="date" id="filter-start-date" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none" title="Başlangıç Tarihi">
                         </div>
                         <div class="md:col-span-1 flex items-center justify-center text-gray-400 text-sm">
                             <i data-lucide="arrow-right" class="w-4 h-4"></i>
                         </div>
                         <div class="md:col-span-3">
-                            <input type="date" id="filter-end-date" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none" title="Bitiş Tarihi">
+                            <input type="date" id="filter-end-date" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none" title="Bitiş Tarihi">
                         </div>
                     </div>
                 </div>
 
                 <div id="list-header-container" class="flex items-center justify-between mb-2">
-                    <h3 id="list-title" class="font-semibold text-gray-900 text-lg">Son İşlemler</h3>
+                    <h3 id="list-title" class="font-semibold text-gray-900 dark:text-white text-lg">İşlemler</h3>
+                    <button onclick="exportExcel('list')" class="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 rounded-lg hover:bg-green-100 dark:hover:bg-green-900/50 transition-colors">
+                        <i data-lucide="table" class="w-3.5 h-3.5"></i> Excel
+                    </button>
                 </div>
 
                 <!-- Sağ Panel Çöp Kutusu Uyarısı (Liste Üstü) -->
                 <div class="hidden" id="trash-info-right">
-                    <div class="bg-red-50 border border-red-100 rounded-xl p-4 mb-4 flex items-center gap-3">
-                        <i data-lucide="alert-triangle" class="w-5 h-5 text-red-600"></i>
-                        <p class="text-sm text-red-700 font-medium">Şu anda silinmiş kayıtları görüntülüyorsunuz.</p>
+                    <div class="bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 rounded-xl p-4 mb-4 flex items-center gap-3">
+                        <i data-lucide="alert-triangle" class="w-5 h-5 text-red-600 dark:text-red-400"></i>
+                        <p class="text-sm text-red-700 dark:text-red-400 font-medium">Şu anda silinmiş kayıtları görüntülüyorsunuz.</p>
                     </div>
                 </div>
 
                 <!-- Boş Durum -->
-                <div id="empty-state" class="hidden bg-white rounded-xl p-12 text-center border border-dashed border-gray-300">
-                    <div class="bg-gray-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <i data-lucide="wallet" class="w-8 h-8 text-gray-400"></i>
+                <div id="empty-state" class="hidden bg-white dark:bg-gray-800 rounded-xl p-12 text-center border border-dashed border-gray-300 dark:border-gray-700">
+                    <div class="bg-gray-50 dark:bg-gray-700 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i data-lucide="wallet" class="w-8 h-8 text-gray-400 dark:text-gray-500"></i>
                     </div>
-                    <h3 class="text-lg font-medium text-gray-900">Kayıt Bulunamadı</h3>
-                    <p class="text-gray-500 mt-1">Arama kriterlerinize uygun kayıt yok veya liste boş.</p>
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-white">Kayıt Bulunamadı</h3>
+                    <p class="text-gray-500 dark:text-gray-400 mt-1">Arama kriterlerinize uygun kayıt yok veya liste boş.</p>
                 </div>
 
                 <!-- Tablo -->
-                <div id="table-container" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div id="table-container" class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
                     <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
+                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                            <thead class="bg-gray-50 dark:bg-gray-700">
                                 <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tarih</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fiş Detayı</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kategori</th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Tutar</th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">İşlem</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Tarih</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Fiş Detayı</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Kategori</th>
+                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Tutar</th>
+                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">İşlem</th>
                                 </tr>
                             </thead>
-                            <tbody id="expense-list-body" class="bg-white divide-y divide-gray-200">
+                            <tbody id="expense-list-body" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                                 <!-- JS ile doldurulacak -->
                             </tbody>
                         </table>
@@ -249,37 +298,61 @@
         <!-- RAPORLAR GÖRÜNÜMÜ -->
         <div id="reports-view" class="hidden space-y-8">
             
-            <!-- Rapor Filtreleme Tabları -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-1 inline-flex">
-                <button onclick="changeReportPeriod('daily')" id="btn-report-daily" class="px-4 py-2 text-sm font-medium rounded-lg transition-colors bg-indigo-50 text-indigo-700">Günlük</button>
-                <button onclick="changeReportPeriod('monthly')" id="btn-report-monthly" class="px-4 py-2 text-sm font-medium rounded-lg transition-colors text-gray-600 hover:bg-gray-50">Aylık</button>
-                <button onclick="changeReportPeriod('yearly')" id="btn-report-yearly" class="px-4 py-2 text-sm font-medium rounded-lg transition-colors text-gray-600 hover:bg-gray-50">Yıllık</button>
+            <div class="flex items-center justify-between">
+                <!-- Rapor Filtreleme Tabları -->
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-1 inline-flex">
+                    <button onclick="changeReportPeriod('daily')" id="btn-report-daily" class="px-4 py-2 text-sm font-medium rounded-lg transition-colors bg-indigo-50 text-indigo-700">Günlük</button>
+                    <button onclick="changeReportPeriod('monthly')" id="btn-report-monthly" class="px-4 py-2 text-sm font-medium rounded-lg transition-colors text-gray-600 hover:bg-gray-50">Aylık</button>
+                    <button onclick="changeReportPeriod('yearly')" id="btn-report-yearly" class="px-4 py-2 text-sm font-medium rounded-lg transition-colors text-gray-600 hover:bg-gray-50">Yıllık</button>
+                </div>
+                <!-- Excel Export Butonu -->
+                <button onclick="exportExcel('report')" class="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm">
+                    <i data-lucide="table" class="w-4 h-4"></i> Excel'e Aktar
+                </button>
             </div>
 
-            <!-- İstatistik Kartları (Dinamik) -->
+            <!-- İstatistik Kartları -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <!-- Toplam Tutar -->
-                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                    <p id="stat-period-label" class="text-sm font-medium text-gray-500 mb-1">Bugünkü Toplam Gider</p>
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
+                    <p id="stat-period-label" class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Bugünkü Toplam Gider</p>
                     <div class="flex items-center justify-between">
-                        <h2 id="stat-total-amount" class="text-3xl font-bold text-gray-900">0,00 ₺</h2>
-                        <div class="p-3 bg-green-50 rounded-full"><i data-lucide="wallet" class="w-6 h-6 text-green-600"></i></div>
+                        <h2 id="stat-total-amount" class="text-3xl font-bold text-gray-900 dark:text-white">0,00 ₺</h2>
+                        <div class="p-3 bg-green-50 dark:bg-green-900/20 rounded-full"><i data-lucide="wallet" class="w-6 h-6 text-green-600 dark:text-green-400"></i></div>
                     </div>
                 </div>
                 <!-- Fiş Sayısı -->
-                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                    <p class="text-sm font-medium text-gray-500 mb-1">İşlenen Fiş Adedi</p>
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
+                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">İşlenen Fiş Adedi</p>
                     <div class="flex items-center justify-between">
-                        <h2 id="stat-count" class="text-3xl font-bold text-gray-900">0</h2>
-                        <div class="p-3 bg-blue-50 rounded-full"><i data-lucide="file-text" class="w-6 h-6 text-blue-600"></i></div>
+                        <h2 id="stat-count" class="text-3xl font-bold text-gray-900 dark:text-white">0</h2>
+                        <div class="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-full"><i data-lucide="file-text" class="w-6 h-6 text-blue-600 dark:text-blue-400"></i></div>
                     </div>
                 </div>
                 <!-- En Çok Harcanan -->
-                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                    <p class="text-sm font-medium text-gray-500 mb-1">En Yüksek Harcama Kalemi</p>
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
+                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">En Yüksek Harcama Kalemi</p>
                     <div class="flex items-center justify-between">
-                        <h2 id="stat-top-cat" class="text-lg font-bold text-gray-900 truncate">-</h2>
-                        <div class="p-3 bg-orange-50 rounded-full"><i data-lucide="trending-up" class="w-6 h-6 text-orange-600"></i></div>
+                        <h2 id="stat-top-cat" class="text-lg font-bold text-gray-900 dark:text-white truncate">-</h2>
+                        <div class="p-3 bg-orange-50 dark:bg-orange-900/20 rounded-full"><i data-lucide="trending-up" class="w-6 h-6 text-orange-600 dark:text-orange-400"></i></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GRAFİKLER -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Pasta Grafik: Kategori Dağılımı -->
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Kategori Bazlı Dağılım</h3>
+                    <div class="relative h-64 w-full">
+                        <canvas id="chart-categories"></canvas>
+                    </div>
+                </div>
+                <!-- Çubuk Grafik: Zamanla Değişim -->
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Harcama Trendi</h3>
+                    <div class="relative h-64 w-full">
+                        <canvas id="chart-trend"></canvas>
                     </div>
                 </div>
             </div>
@@ -290,20 +363,20 @@
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <!-- Takvim Bileşeni -->
                 <div class="lg:col-span-2">
-                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                        <div class="bg-gray-50 px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-                            <button onclick="changeCalendarMonth(-1)" class="p-2 hover:bg-gray-200 rounded-full transition-colors">
-                                <i data-lucide="chevron-left" class="w-5 h-5 text-gray-600"></i>
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+                        <div class="bg-gray-50 dark:bg-gray-700/50 px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+                            <button onclick="changeCalendarMonth(-1)" class="p-2 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full transition-colors">
+                                <i data-lucide="chevron-left" class="w-5 h-5 text-gray-600 dark:text-gray-300"></i>
                             </button>
-                            <h3 class="font-bold text-gray-900 text-lg flex items-center gap-2" id="calendar-month-label">
-                                <i data-lucide="calendar" class="w-5 h-5 text-indigo-600"></i> Aralık 2024
+                            <h3 class="font-bold text-gray-900 dark:text-white text-lg flex items-center gap-2" id="calendar-month-label">
+                                <i data-lucide="calendar" class="w-5 h-5 text-indigo-600 dark:text-indigo-400"></i> Aralık 2024
                             </h3>
-                            <button onclick="changeCalendarMonth(1)" class="p-2 hover:bg-gray-200 rounded-full transition-colors">
-                                <i data-lucide="chevron-right" class="w-5 h-5 text-gray-600"></i>
+                            <button onclick="changeCalendarMonth(1)" class="p-2 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full transition-colors">
+                                <i data-lucide="chevron-right" class="w-5 h-5 text-gray-600 dark:text-gray-300"></i>
                             </button>
                         </div>
                         <div class="p-6">
-                            <div class="grid grid-cols-7 gap-2 mb-2 text-center text-xs font-semibold text-gray-500 uppercase">
+                            <div class="grid grid-cols-7 gap-2 mb-2 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">
                                 <div>Pzt</div><div>Sal</div><div>Çar</div><div>Per</div><div>Cum</div><div>Cmt</div><div>Paz</div>
                             </div>
                             <div id="calendar-grid" class="grid grid-cols-7 gap-2 text-sm">
@@ -315,13 +388,13 @@
 
                 <!-- Seçili Günün Detayları -->
                 <div class="lg:col-span-1">
-                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden sticky top-24 h-[600px] flex flex-col">
-                        <div class="bg-gray-50 px-6 py-4 border-b border-gray-200">
-                            <h3 class="font-semibold text-gray-900" id="selected-date-title">Tarih Seçiniz</h3>
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden sticky top-24 h-[600px] flex flex-col">
+                        <div class="bg-gray-50 dark:bg-gray-700/50 px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                            <h3 class="font-semibold text-gray-900 dark:text-white" id="selected-date-title">Tarih Seçiniz</h3>
                         </div>
                         <div id="selected-date-expenses" class="flex-1 overflow-y-auto p-4 space-y-3">
                             <!-- JS ile dolacak -->
-                            <div class="text-center text-gray-400 mt-10">
+                            <div class="text-center text-gray-400 dark:text-gray-500 mt-10">
                                 <i data-lucide="mouse-pointer-click" class="w-12 h-12 mx-auto mb-2 opacity-50"></i>
                                 <p>İşlemleri görmek için takvimden bir güne tıklayın.</p>
                             </div>
@@ -335,31 +408,31 @@
 
     <!-- MODAL (Belge Görüntüleme) -->
     <div id="document-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm transition-opacity duration-300 opacity-0">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-4xl h-[85vh] flex flex-col overflow-hidden transform transition-all scale-95" id="modal-content">
-            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gray-50">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-4xl h-[85vh] flex flex-col overflow-hidden transform transition-all scale-95" id="modal-content">
+            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
                 <div>
-                    <h3 id="modal-title" class="text-lg font-bold text-gray-900 flex items-center gap-2">Fiş No</h3>
-                    <p id="modal-subtitle" class="text-sm text-gray-500">Kategori • Tarih</p>
+                    <h3 id="modal-title" class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">Fiş No</h3>
+                    <p id="modal-subtitle" class="text-sm text-gray-500 dark:text-gray-400">Kategori • Tarih</p>
                 </div>
-                <button id="btn-close-modal" class="p-2 hover:bg-gray-200 rounded-full transition-colors"><i data-lucide="x" class="w-6 h-6 text-gray-600"></i></button>
+                <button id="btn-close-modal" class="p-2 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full transition-colors"><i data-lucide="x" class="w-6 h-6 text-gray-600 dark:text-gray-300"></i></button>
             </div>
-            <div class="flex border-b border-gray-200">
-                <button id="tab-file" class="flex-1 py-3 text-sm font-medium text-center transition-colors text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50/50">
+            <div class="flex border-b border-gray-200 dark:border-gray-700">
+                <button id="tab-file" class="flex-1 py-3 text-sm font-medium text-center transition-colors text-indigo-600 dark:text-indigo-400 border-b-2 border-indigo-600 dark:border-indigo-400 bg-indigo-50/50 dark:bg-indigo-900/20">
                     <div class="flex items-center justify-center gap-2"><i data-lucide="file-text" class="w-4 h-4"></i> Dosya Görüntüle</div>
                 </button>
-                <button id="tab-logs" class="flex-1 py-3 text-sm font-medium text-center transition-colors text-gray-500 hover:text-gray-700 hover:bg-gray-50">
+                <button id="tab-logs" class="flex-1 py-3 text-sm font-medium text-center transition-colors text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700">
                     <div class="flex items-center justify-center gap-2"><i data-lucide="history" class="w-4 h-4"></i> İşlem Geçmişi</div>
                 </button>
             </div>
-            <div class="flex-1 bg-gray-100 p-4 overflow-auto relative">
+            <div class="flex-1 bg-gray-100 dark:bg-gray-900 p-4 overflow-auto relative">
                 <div id="view-file-container" class="w-full h-full flex items-center justify-center relative"><div class="text-center text-gray-400"><div class="loader mx-auto mb-2"></div><p>Yükleniyor...</p></div></div>
                 <div id="view-logs-container" class="hidden max-w-2xl mx-auto space-y-4 w-full h-full overflow-y-auto"></div>
             </div>
-            <div class="px-6 py-4 border-t border-gray-200 bg-white flex justify-between items-center">
-                <div id="modal-desc" class="text-sm text-gray-500 max-w-[50%] truncate">Açıklama</div>
+            <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex justify-between items-center">
+                <div id="modal-desc" class="text-sm text-gray-500 dark:text-gray-400 max-w-[50%] truncate">Açıklama</div>
                 <div class="flex items-center gap-4">
-                    <button id="btn-download" class="hidden flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors shadow-sm"><i data-lucide="download" class="w-4 h-4"></i><span class="hidden sm:inline">İndir</span></button>
-                    <div id="modal-amount" class="text-xl font-bold text-gray-900 border-l pl-4 border-gray-200">0.00 ₺</div>
+                    <button id="btn-download" class="hidden flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors shadow-sm"><i data-lucide="download" class="w-4 h-4"></i><span class="hidden sm:inline">İndir</span></button>
+                    <div id="modal-amount" class="text-xl font-bold text-gray-900 dark:text-white border-l pl-4 border-gray-200 dark:border-gray-700">0.00 ₺</div>
                 </div>
             </div>
         </div>
@@ -397,16 +470,16 @@
         let currentDocData = null;
         let reportPeriod = 'daily'; 
         
-        // Takvim State
         let currentCalendarDate = new Date();
         let selectedDate = null;
-
-        // Filtreleme State'i
         let searchQuery = '';
         let filterStartDate = '';
         let filterEndDate = '';
 
-        // DOM Elemanları (onload içinde doldurulacak)
+        let chartInstance1 = null;
+        let chartInstance2 = null;
+
+        // DOM Referansları
         let pageLoader, expenseForm, expenseListBody, mainView, reportsView, calendarView;
         let btnViewActive, btnViewTrash, btnViewReports, btnViewCalendar;
         let formSection, trashInfoLeft, trashInfoRight, emptyState, tableContainer;
@@ -415,18 +488,28 @@
         let searchPanel, listTitle, searchInput, inputStartDate, inputEndDate, btnClearFilter;
         let modalRefs = {};
 
-        // --- BAŞLANGIÇ ---
         window.onload = () => {
-            initUI(); // UI Referanslarını Al
+            initUI();
             lucide.createIcons();
             initAuth();
             setupEventListeners();
             document.getElementById('expense-date').value = new Date().toISOString().split('T')[0];
             
-            // Global erişim
+            // Dark Mode Init
+            if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+            updateThemeIcon();
+
+            // Globals
             window.changeReportPeriod = changeReportPeriod;
             window.changeCalendarMonth = changeCalendarMonth;
             window.toggleZoom = toggleZoom;
+            window.toggleTheme = toggleTheme;
+            window.runOCR = runOCR;
+            window.exportExcel = exportExcel;
         };
 
         function initUI() {
@@ -445,7 +528,6 @@
             formSection = document.getElementById('form-section');
             trashInfoLeft = document.getElementById('trash-info-left');
             trashInfoRight = document.getElementById('trash-info-right');
-            
             emptyState = document.getElementById('empty-state');
             tableContainer = document.getElementById('table-container');
             
@@ -466,7 +548,6 @@
             inputEndDate = document.getElementById('filter-end-date');
             btnClearFilter = document.getElementById('btn-clear-filter');
 
-            // Modal Refs
             modalRefs = {
                 modal: document.getElementById('document-modal'),
                 content: document.getElementById('modal-content'),
@@ -494,24 +575,20 @@
         }
 
         function setupEventListeners() {
-            // Ana Navigasyon
             btnViewActive.addEventListener('click', () => changeView('active'));
             btnViewTrash.addEventListener('click', () => changeView('trash'));
             btnViewReports.addEventListener('click', () => changeView('reports'));
             btnViewCalendar.addEventListener('click', () => changeView('calendar'));
 
-            // Filtreleme
             searchInput.addEventListener('input', (e) => { searchQuery = e.target.value.toLowerCase(); renderList(); });
             inputStartDate.addEventListener('change', (e) => { filterStartDate = e.target.value; renderList(); toggleClearFilterBtn(); });
             inputEndDate.addEventListener('change', (e) => { filterEndDate = e.target.value; renderList(); toggleClearFilterBtn(); });
             btnClearFilter.addEventListener('click', clearFilters);
 
-            // Form
             fileUploadInput.addEventListener('change', handleFileSelect);
             expenseForm.addEventListener('submit', handleFormSubmit);
             btnCancelEdit.addEventListener('click', resetForm);
 
-            // Modal
             document.getElementById('btn-close-modal').addEventListener('click', closeModal);
             modalRefs.tabFile.addEventListener('click', () => switchModalTab('file'));
             modalRefs.tabLogs.addEventListener('click', () => switchModalTab('logs'));
@@ -530,21 +607,39 @@
                     return dateB - dateA;
                 });
                 expenses = list;
-                
                 if(currentView === 'reports') renderReports();
                 else if(currentView === 'calendar') renderCalendarView();
                 else renderList();
-                
                 pageLoader.classList.add('hidden');
             });
         }
 
-        // --- GÖRÜNÜM YÖNETİMİ ---
+        // --- GÖRÜNÜM & THEME ---
+        function toggleTheme() {
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('color-theme', 'light');
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('color-theme', 'dark');
+            }
+            updateThemeIcon();
+            if(currentView === 'reports') renderReports(); // Grafikleri güncelle
+        }
+
+        function updateThemeIcon() {
+            const icon = document.getElementById('theme-icon');
+            if (document.documentElement.classList.contains('dark')) {
+                icon.setAttribute('data-lucide', 'sun');
+            } else {
+                icon.setAttribute('data-lucide', 'moon');
+            }
+            lucide.createIcons();
+        }
+
         function changeView(view) {
             currentView = view;
-            
-            // Reset Buton Stilleri
-            const inactiveClass = "px-3 py-1.5 text-sm font-medium rounded-md transition-all text-gray-500 hover:text-gray-700 flex items-center gap-1";
+            const inactiveClass = "px-3 py-1.5 text-sm font-medium rounded-md transition-all text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white flex items-center gap-1";
             btnViewActive.className = inactiveClass;
             btnViewTrash.className = inactiveClass;
             btnViewReports.className = inactiveClass;
@@ -556,16 +651,16 @@
             searchPanel.classList.add('hidden');
 
             if (view === 'active') {
-                btnViewActive.className = "px-3 py-1.5 text-sm font-medium rounded-md transition-all bg-white text-gray-900 shadow-sm flex items-center gap-1";
+                btnViewActive.className = "px-3 py-1.5 text-sm font-medium rounded-md transition-all bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm flex items-center gap-1";
                 mainView.classList.remove('hidden');
                 searchPanel.classList.remove('hidden');
                 formSection.classList.remove('hidden');
                 trashInfoLeft.classList.add('hidden');
                 trashInfoRight.classList.add('hidden');
-                listTitle.innerText = "Son İşlemler";
+                listTitle.innerText = "İşlemler";
                 renderList();
             } else if (view === 'trash') {
-                btnViewTrash.className = "px-3 py-1.5 text-sm font-medium rounded-md flex items-center gap-1 transition-all bg-white text-red-600 shadow-sm";
+                btnViewTrash.className = "px-3 py-1.5 text-sm font-medium rounded-md flex items-center gap-1 transition-all bg-white dark:bg-gray-600 text-red-600 dark:text-red-400 shadow-sm";
                 mainView.classList.remove('hidden');
                 searchPanel.classList.remove('hidden');
                 formSection.classList.add('hidden');
@@ -574,14 +669,141 @@
                 listTitle.innerText = "Silinmiş Kayıtlar";
                 renderList();
             } else if (view === 'reports') {
-                btnViewReports.className = "px-3 py-1.5 text-sm font-medium rounded-md transition-all bg-white text-indigo-600 shadow-sm flex items-center gap-1";
+                btnViewReports.className = "px-3 py-1.5 text-sm font-medium rounded-md transition-all bg-white dark:bg-gray-600 text-indigo-600 dark:text-indigo-400 shadow-sm flex items-center gap-1";
                 reportsView.classList.remove('hidden');
                 renderReports();
             } else if (view === 'calendar') {
-                btnViewCalendar.className = "px-3 py-1.5 text-sm font-medium rounded-md transition-all bg-white text-indigo-600 shadow-sm flex items-center gap-1";
+                btnViewCalendar.className = "px-3 py-1.5 text-sm font-medium rounded-md transition-all bg-white dark:bg-gray-600 text-indigo-600 dark:text-indigo-400 shadow-sm flex items-center gap-1";
                 calendarView.classList.remove('hidden');
                 renderCalendarView();
             }
+        }
+
+        // --- EXCEL EXPORT (Türkçe Karakter Desteği) ---
+        function exportExcel(source = 'all') {
+            let listToExport = [];
+            
+            // Eğer "list" parametresi geldiyse, sadece ekrandaki (filtrelenmiş) listeyi al
+            if (source === 'list') {
+                listToExport = expenses.filter(item => !item.isDeleted); // Önce aktifler
+                // Mevcut filtreleri uygula
+                if (searchQuery) {
+                    listToExport = listToExport.filter(item => 
+                        (item.receiptNo && item.receiptNo.toLowerCase().includes(searchQuery)) ||
+                        (item.description && item.description.toLowerCase().includes(searchQuery)) ||
+                        (item.category && item.category.toLowerCase().includes(searchQuery))
+                    );
+                }
+                if (filterStartDate) listToExport = listToExport.filter(item => item.expenseDate >= filterStartDate);
+                if (filterEndDate) listToExport = listToExport.filter(item => item.expenseDate <= filterEndDate);
+            } else {
+                // Varsayılan (Raporlar ekranı): Tüm aktif veriyi al
+                listToExport = expenses.filter(e => !e.isDeleted);
+            }
+
+            // CSV Başlık
+            let csvContent = "Tarih;Fiş No;Kategori;Tutar;Açıklama;Durum\n";
+
+            listToExport.forEach(e => {
+                const row = [
+                    e.expenseDate,
+                    `"${e.receiptNo || ''}"`, // Tırnak içine alarak karışıklığı önle
+                    `"${e.category || ''}"`,
+                    e.amount.toString().replace('.', ','), // Excel TR ondalık formatı (virgül)
+                    `"${(e.description || '').replace(/"/g, '""')}"`, // Açıklamadaki tırnakları escape et
+                    e.isDeleted ? 'Silindi' : 'Aktif'
+                ].join(";"); // Türkçe Excel için noktalı virgül
+                csvContent += row + "\n";
+            });
+
+            // BOM (Byte Order Mark) ekle: \uFEFF - Bu Türkçe karakterlerin düzgün görünmesini sağlar
+            const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            link.setAttribute("download", `gider_listesi_${new Date().toISOString().slice(0,10)}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // --- OCR (TESSERACT) ---
+        function runOCR() {
+            if (!fileData) {
+                showError("Lütfen önce bir dosya seçin.");
+                return;
+            }
+            
+            const btnOcr = document.getElementById('btn-ocr');
+            const statusDiv = document.getElementById('ocr-status');
+            
+            btnOcr.disabled = true;
+            btnOcr.innerHTML = `<div class="loader w-3 h-3 border-2 border-t-indigo-600 mr-2"></div> Taranıyor...`;
+            statusDiv.innerText = "Görüntü işleniyor, lütfen bekleyin...";
+            statusDiv.classList.remove('hidden');
+
+            Tesseract.recognize(
+                fileData,
+                'tur', // Türkçe
+                { logger: m => statusDiv.innerText = `İlerleme: %${Math.round(m.progress * 100)} - ${m.status}` }
+            ).then(({ data: { text } }) => {
+                console.log("OCR Text:", text);
+                
+                // --- Fiş Numarası Bulma (Geliştirilmiş) ---
+                // Olası desenler: "Fiş No: 123", "Fatura No: A-12", "No: 55", "Sıra No: 1"
+                // Basitçe "No" kelimesinden sonra gelen alfanümerik değerlere bakıyoruz.
+                const receiptMatch = text.match(/(?:Fiş|Fatura|Sıra|Belge)?\s*No[:.\s]*([A-Z0-9-]{2,})/i);
+                if (receiptMatch && receiptMatch[1]) {
+                    document.getElementById('receipt-no').value = receiptMatch[1].trim();
+                }
+
+                // --- Tarih Bulma ---
+                // DD.MM.YYYY veya YYYY-MM-DD
+                const dateMatch = text.match(/(\d{2}[./-]\d{2}[./-]\d{4})/) || text.match(/(\d{4}[./-]\d{2}[./-]\d{2})/);
+                if (dateMatch) {
+                    let d = dateMatch[0].replace(/\./g, '-').replace(/\//g, '-');
+                    if (d.split('-')[0].length === 2) { // DD-MM-YYYY -> YYYY-MM-DD
+                        const p = d.split('-');
+                        d = `${p[2]}-${p[1]}-${p[0]}`;
+                    }
+                    try {
+                        document.getElementById('expense-date').value = d;
+                    } catch(e) {}
+                }
+
+                // --- Tutar Bulma ---
+                // Genellikle en büyük sayısal değer "Toplam" tutardır.
+                // 1.234,56 veya 1234.56 formatlarını destekler.
+                const prices = text.match(/\b\d+[.,]\d{2}\b/g);
+                if (prices && prices.length > 0) {
+                    // Sayıları normalize et (virgülü noktaya çevir) ve sayıya dönüştür
+                    const amounts = prices.map(p => {
+                        // "1.234,56" -> "1234.56" (Binlik ayracı nokta, ondalık virgül ise)
+                        if (p.includes('.') && p.includes(',')) {
+                            return parseFloat(p.replace(/\./g, '').replace(',', '.'));
+                        }
+                        // "1234,56" -> "1234.56" (Sadece virgül varsa ondalıktır)
+                        else if (p.includes(',')) {
+                            return parseFloat(p.replace(',', '.'));
+                        }
+                        return parseFloat(p);
+                    }).filter(n => !isNaN(n));
+
+                    if (amounts.length > 0) {
+                        const maxAmount = Math.max(...amounts);
+                        document.getElementById('amount').value = maxAmount;
+                    }
+                }
+
+                statusDiv.innerText = "Tarama tamamlandı! Bilgiler forma aktarıldı (Lütfen kontrol edin).";
+            }).catch(err => {
+                console.error(err);
+                statusDiv.innerText = "OCR Hatası: Metin okunamadı.";
+            }).finally(() => {
+                btnOcr.disabled = false;
+                btnOcr.innerHTML = `<i data-lucide="scan-line" class="w-3 h-3"></i> Yapay Zeka ile Tara (Fiş No, Tarih, Tutar)`;
+                lucide.createIcons();
+            });
         }
 
         // --- LİSTELEME ---
@@ -612,30 +834,30 @@
                     const catColor = getCategoryColor(expense.category);
                     
                     const row = document.createElement('tr');
-                    row.className = `hover:bg-gray-50 transition-colors ${editingId === expense.id ? 'bg-indigo-50/50' : ''}`;
+                    row.className = `hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors ${editingId === expense.id ? 'bg-indigo-50/50 dark:bg-indigo-900/20' : ''}`;
                     
-                    let actionButtonsHtml = `<button onclick="openModal('${expense.id}')" class="p-1.5 rounded-md text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"><i data-lucide="eye" class="w-4 h-4"></i></button>`;
+                    let actionButtonsHtml = `<button onclick="openModal('${expense.id}')" class="p-1.5 rounded-md text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-colors"><i data-lucide="eye" class="w-4 h-4"></i></button>`;
                     
                     if (currentView === 'active') {
-                        const editClass = editingId === expense.id ? 'text-indigo-600 bg-indigo-100' : 'text-gray-400 hover:text-blue-600 hover:bg-blue-50';
+                        const editClass = editingId === expense.id ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-100 dark:bg-indigo-900/40' : 'text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30';
                         actionButtonsHtml += `
                             <button onclick="loadExpenseToForm('${expense.id}')" class="p-1.5 rounded-md transition-colors ${editClass}" ${editingId === expense.id ? 'disabled' : ''}><i data-lucide="pencil" class="w-4 h-4"></i></button>
-                            <button onclick="softDelete('${expense.id}')" class="p-1.5 rounded-md text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                            <button onclick="softDelete('${expense.id}')" class="p-1.5 rounded-md text-gray-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                         `;
                     } else {
                         actionButtonsHtml += `
-                            <button onclick="restoreExpense('${expense.id}')" class="p-1.5 rounded-md text-green-500 hover:text-green-700 hover:bg-green-50 transition-colors"><i data-lucide="rotate-ccw" class="w-4 h-4"></i></button>
-                            <button onclick="permanentDelete('${expense.id}')" class="p-1.5 rounded-md text-red-500 hover:text-red-700 hover:bg-red-50 transition-colors"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                            <button onclick="restoreExpense('${expense.id}')" class="p-1.5 rounded-md text-green-500 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 hover:bg-green-50 dark:hover:bg-green-900/30 transition-colors"><i data-lucide="rotate-ccw" class="w-4 h-4"></i></button>
+                            <button onclick="permanentDelete('${expense.id}')" class="p-1.5 rounded-md text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                         `;
                     }
 
                     row.innerHTML = `
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            <div class="flex flex-col"><span class="font-medium text-gray-700">${date}</span>${hasFile ? `<span class="flex items-center gap-1 text-xs text-indigo-600 mt-1"><i data-lucide="file-text" class="w-3 h-3"></i><span class="truncate max-w-[80px]">Dosya</span></span>` : ``}</div>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                            <div class="flex flex-col"><span class="font-medium text-gray-700 dark:text-gray-300">${date}</span>${hasFile ? `<span class="flex items-center gap-1 text-xs text-indigo-600 dark:text-indigo-400 mt-1"><i data-lucide="file-text" class="w-3 h-3"></i><span class="truncate max-w-[80px]">Dosya</span></span>` : ``}</div>
                         </td>
-                        <td class="px-6 py-4"><div class="text-sm font-medium text-gray-900">${expense.receiptNo}</div><div class="text-xs text-gray-500 truncate max-w-[150px]">${expense.description || ''}</div></td>
+                        <td class="px-6 py-4"><div class="text-sm font-medium text-gray-900 dark:text-white">${expense.receiptNo}</div><div class="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[150px]">${expense.description || ''}</div></td>
                         <td class="px-6 py-4 whitespace-nowrap"><span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${catColor}">${expense.category}</span></td>
-                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-bold text-gray-900">${formatCurrency(expense.amount)}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-bold text-gray-900 dark:text-white">${formatCurrency(expense.amount)}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"><div class="flex items-center justify-end gap-2">${actionButtonsHtml}</div></td>
                     `;
                     expenseListBody.appendChild(row);
@@ -644,20 +866,19 @@
             }
         }
 
-        // Global functions
         window.openModal = (id) => { const e = expenses.find(x => x.id === id); if(e) openModal(e); };
         window.loadExpenseToForm = (id) => { const e = expenses.find(x => x.id === id); if(e) loadExpenseToForm(e); };
         window.softDelete = softDelete;
         window.restoreExpense = restoreExpense;
         window.permanentDelete = permanentDelete;
 
-        // --- RAPOR ---
+        // --- RAPOR & GRAFİKLER ---
         function changeReportPeriod(period) {
             reportPeriod = period;
             ['daily', 'monthly', 'yearly'].forEach(p => {
                 const btn = document.getElementById(`btn-report-${p}`);
-                if (p === period) btn.className = "px-4 py-2 text-sm font-medium rounded-lg transition-colors bg-indigo-50 text-indigo-700";
-                else btn.className = "px-4 py-2 text-sm font-medium rounded-lg transition-colors text-gray-600 hover:bg-gray-50";
+                if (p === period) btn.className = "px-4 py-2 text-sm font-medium rounded-lg transition-colors bg-indigo-50 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300";
+                else btn.className = "px-4 py-2 text-sm font-medium rounded-lg transition-colors text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700";
             });
             renderReports();
         }
@@ -692,6 +913,83 @@
             document.getElementById('stat-total-amount').innerText = formatCurrency(total);
             document.getElementById('stat-count').innerText = count;
             document.getElementById('stat-top-cat').innerText = topCategory;
+
+            renderCharts(filteredList);
+        }
+
+        function renderCharts(data) {
+            // Renk paleti (Dark mode uyumlu)
+            const isDark = document.documentElement.classList.contains('dark');
+            const textColor = isDark ? '#e5e7eb' : '#374151';
+            
+            // Pasta Grafik
+            const catCounts = {};
+            data.forEach(item => { catCounts[item.category] = (catCounts[item.category] || 0) + item.amount; });
+            
+            const ctxCat = document.getElementById('chart-categories').getContext('2d');
+            if(chartInstance1) chartInstance1.destroy();
+            
+            chartInstance1 = new Chart(ctxCat, {
+                type: 'pie',
+                data: {
+                    labels: Object.keys(catCounts),
+                    datasets: [{
+                        data: Object.values(catCounts),
+                        backgroundColor: [
+                            'rgba(59, 130, 246, 0.7)', // Blue
+                            'rgba(249, 115, 22, 0.7)', // Orange
+                            'rgba(34, 197, 94, 0.7)', // Green
+                            'rgba(168, 85, 247, 0.7)', // Purple
+                            'rgba(236, 72, 153, 0.7)', // Pink
+                            'rgba(107, 114, 128, 0.7)'  // Gray
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { labels: { color: textColor } }
+                    }
+                }
+            });
+
+            // Trend Grafiği (Son 7 gün veya filtrelenen veri)
+            const dateCounts = {};
+            data.sort((a,b) => a.expenseDate.localeCompare(b.expenseDate));
+            data.forEach(item => {
+                const d = item.expenseDate || 'Tarihsiz';
+                dateCounts[d] = (dateCounts[d] || 0) + item.amount;
+            });
+
+            const ctxTrend = document.getElementById('chart-trend').getContext('2d');
+            if(chartInstance2) chartInstance2.destroy();
+
+            chartInstance2 = new Chart(ctxTrend, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(dateCounts),
+                    datasets: [{
+                        label: 'Günlük Toplam (TL)',
+                        data: Object.values(dateCounts),
+                        backgroundColor: 'rgba(99, 102, 241, 0.7)', // Indigo
+                        borderColor: 'rgba(99, 102, 241, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { ticks: { color: textColor }, grid: { color: isDark ? '#374151' : '#e5e7eb' } },
+                        x: { ticks: { color: textColor }, grid: { color: isDark ? '#374151' : '#e5e7eb' } }
+                    },
+                    plugins: {
+                        legend: { labels: { color: textColor } }
+                    }
+                }
+            });
         }
 
         // --- TAKVİM ---
@@ -702,7 +1000,6 @@
 
         function renderCalendarView() {
             const calendarGrid = document.getElementById('calendar-grid');
-            const selectedDateContainer = document.getElementById('selected-date-expenses');
             calendarGrid.innerHTML = '';
             
             const year = currentCalendarDate.getFullYear();
@@ -710,7 +1007,7 @@
             const todayStr = new Date().toISOString().split('T')[0];
             
             const monthNames = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
-            document.getElementById('calendar-month-label').innerHTML = `<i data-lucide="calendar" class="w-5 h-5 text-indigo-600"></i> ${monthNames[month]} ${year}`;
+            document.getElementById('calendar-month-label').innerHTML = `<i data-lucide="calendar" class="w-5 h-5 text-indigo-600 dark:text-indigo-400"></i> ${monthNames[month]} ${year}`;
 
             const firstDay = new Date(year, month, 1);
             const lastDay = new Date(year, month + 1, 0);
@@ -736,26 +1033,23 @@
                 let dotsHtml = '';
                 if(hasExpense) {
                     dotsHtml = `<div class="has-expense-indicator">`;
-                    // Max 3 dot
                     for(let k=0; k<Math.min(dailyExpenses.length, 3); k++) {
                         dotsHtml += `<div class="dot"></div>`;
                     }
-                    if(dailyExpenses.length > 3) dotsHtml += `<span class="text-[8px] text-indigo-600 leading-none">+</span>`;
+                    if(dailyExpenses.length > 3) dotsHtml += `<span class="text-[8px] text-indigo-600 dark:text-indigo-400 leading-none">+</span>`;
                     dotsHtml += `</div>`;
                 }
 
-                dayDiv.innerHTML = `<span class="text-sm text-gray-700">${i}</span>${dotsHtml}`;
+                dayDiv.innerHTML = `<span class="text-sm text-gray-700 dark:text-gray-300">${i}</span>${dotsHtml}`;
                 calendarGrid.appendChild(dayDiv);
             }
             lucide.createIcons();
-            
-            // Eğer tarih seçiliyse detayları göster
             if (selectedDate) renderSelectedDateDetails();
         }
 
         function selectDate(dateStr) {
             selectedDate = dateStr;
-            renderCalendarView(); // Highlight güncelle
+            renderCalendarView(); 
         }
 
         function renderSelectedDateDetails() {
@@ -763,7 +1057,7 @@
             const title = document.getElementById('selected-date-title');
             
             if (!selectedDate) {
-                container.innerHTML = `<div class="text-center text-gray-400 mt-10"><i data-lucide="mouse-pointer-click" class="w-12 h-12 mx-auto mb-2 opacity-50"></i><p>İşlemleri görmek için takvimden bir güne tıklayın.</p></div>`;
+                container.innerHTML = `<div class="text-center text-gray-400 dark:text-gray-500 mt-10"><i data-lucide="mouse-pointer-click" class="w-12 h-12 mx-auto mb-2 opacity-50"></i><p>İşlemleri görmek için takvimden bir güne tıklayın.</p></div>`;
                 title.innerText = "Tarih Seçiniz";
                 lucide.createIcons();
                 return;
@@ -775,22 +1069,22 @@
             const dailyList = expenses.filter(e => !e.isDeleted && e.expenseDate === selectedDate);
 
             if (dailyList.length === 0) {
-                container.innerHTML = `<div class="text-center text-gray-400 py-8"><p>Bu tarihte kayıtlı harcama yok.</p></div>`;
+                container.innerHTML = `<div class="text-center text-gray-400 dark:text-gray-500 py-8"><p>Bu tarihte kayıtlı harcama yok.</p></div>`;
             } else {
                 let html = '';
                 dailyList.forEach(ex => {
                     const catColor = getCategoryColor(ex.category);
                     html += `
-                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-100 hover:bg-gray-100 transition-colors cursor-pointer" onclick="openModal('${ex.id}')">
+                        <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-100 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer" onclick="openModal('${ex.id}')">
                             <div class="flex-1 min-w-0 mr-2">
                                 <div class="flex items-center gap-2 mb-1">
-                                    <span class="text-xs font-bold text-gray-900">${ex.receiptNo}</span>
+                                    <span class="text-xs font-bold text-gray-900 dark:text-white">${ex.receiptNo}</span>
                                     <span class="px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${catColor}">${ex.category}</span>
                                 </div>
-                                <p class="text-xs text-gray-500 truncate">${ex.description || 'Açıklama yok'}</p>
+                                <p class="text-xs text-gray-500 dark:text-gray-400 truncate">${ex.description || 'Açıklama yok'}</p>
                             </div>
                             <div class="text-right">
-                                <span class="block text-sm font-bold text-gray-900">${formatCurrency(ex.amount)}</span>
+                                <span class="block text-sm font-bold text-gray-900 dark:text-white">${formatCurrency(ex.amount)}</span>
                                 ${ex.hasFile || ex.fileData ? '<i data-lucide="paperclip" class="w-3 h-3 text-indigo-400 inline-block"></i>' : ''}
                             </div>
                         </div>
@@ -804,6 +1098,7 @@
         // --- FORM İŞLEMLERİ ---
         function handleFileSelect(e) {
             const file = e.target.files[0];
+            const btnOcr = document.getElementById('btn-ocr');
             errorMsg.classList.add('hidden');
             if (file) {
                 if (file.size > 4 * 1024 * 1024) { showError('Dosya boyutu çok yüksek! (Max 4MB)'); e.target.value = ""; resetFileState(); return; }
@@ -812,6 +1107,7 @@
                 reader.onloadend = () => {
                     fileData = reader.result;
                     fileDisplayArea.innerHTML = `<div class="flex flex-col items-center justify-center text-green-600 gap-1"><i data-lucide="file-text" class="h-6 w-6"></i><span class="text-sm font-medium truncate max-w-[200px]">${fileName}</span><span class="text-xs text-gray-400">Hazır</span></div>`;
+                    btnOcr.disabled = false; // OCR'ı aktif et
                     lucide.createIcons();
                 };
                 reader.readAsDataURL(file);
@@ -828,7 +1124,8 @@
                     receiptNo: document.getElementById('receipt-no').value,
                     amount: parseFloat(document.getElementById('amount').value),
                     category: document.getElementById('category').value,
-                    description: document.getElementById('description').value
+                    description: document.getElementById('description').value,
+                    isRecurring: document.getElementById('is-recurring').checked // Tekrarlayan
                 };
                 const changes = [];
                 if (editingId) {
@@ -874,11 +1171,13 @@
             document.getElementById('amount').value = expense.amount;
             document.getElementById('category').value = expense.category;
             document.getElementById('description').value = expense.description || '';
+            document.getElementById('is-recurring').checked = expense.isRecurring || false;
             
             formTitle.innerText = "Kayıt Düzenleniyor";
-            formTitle.className = "font-semibold text-indigo-900";
-            formCard.classList.add('border-indigo-300', 'ring-2', 'ring-indigo-100');
+            formTitle.className = "font-semibold text-indigo-900 dark:text-indigo-400";
+            formCard.classList.add('border-indigo-300', 'dark:border-indigo-800', 'ring-2', 'ring-indigo-100', 'dark:ring-indigo-900');
             document.getElementById('form-header').classList.replace('bg-gray-50', 'bg-indigo-50');
+            document.getElementById('form-header').classList.add('dark:bg-indigo-900/40');
             btnSubmit.innerHTML = `<span>Değişiklikleri Kaydet</span>`;
             btnSubmit.className = "w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors";
             btnCancelEdit.classList.remove('hidden');
@@ -896,11 +1195,12 @@
             document.getElementById('expense-date').value = new Date().toISOString().split('T')[0];
             
             formTitle.innerText = "Yeni Fiş Ekle";
-            formTitle.className = "font-semibold text-gray-900";
-            formCard.classList.remove('border-indigo-300', 'ring-2', 'ring-indigo-100');
+            formTitle.className = "font-semibold text-gray-900 dark:text-white";
+            formCard.classList.remove('border-indigo-300', 'dark:border-indigo-800', 'ring-2', 'ring-indigo-100', 'dark:ring-indigo-900');
             document.getElementById('form-header').classList.replace('bg-indigo-50', 'bg-gray-50');
+            document.getElementById('form-header').classList.remove('dark:bg-indigo-900/40');
             btnSubmit.innerHTML = `<span>Gideri Kaydet</span>`;
-            btnSubmit.className = "w-full bg-gray-900 hover:bg-gray-800 text-white py-2.5 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors";
+            btnSubmit.className = "w-full bg-gray-900 dark:bg-indigo-600 hover:bg-gray-800 dark:hover:bg-indigo-700 text-white py-2.5 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors";
             btnCancelEdit.classList.add('hidden');
             formIcon.classList.replace('text-indigo-600', 'text-gray-500');
             formIcon.setAttribute('data-lucide', 'plus');
@@ -910,7 +1210,9 @@
         }
         function resetFileState() {
             fileName = ''; fileData = null; fileType = ''; fileUploadInput.value = '';
-            fileDisplayArea.innerHTML = `<i data-lucide="upload" class="mx-auto h-8 w-8 text-gray-400"></i><div class="flex text-sm text-gray-600 justify-center mt-2"><span class="font-medium text-indigo-600">Dosya Seç</span></div><p class="text-xs text-gray-400 mt-1">Yüksek boyutlu dosyalar otomatik parçalanır</p>`;
+            document.getElementById('btn-ocr').disabled = true;
+            document.getElementById('ocr-status').classList.add('hidden');
+            fileDisplayArea.innerHTML = `<i data-lucide="upload" class="mx-auto h-8 w-8 text-gray-400"></i><div class="flex text-sm text-gray-600 dark:text-gray-400 justify-center mt-2"><span class="font-medium text-indigo-600 dark:text-indigo-400">Dosya Seç</span></div><p class="text-xs text-gray-400 mt-1">Yüksek boyutlu dosyalar otomatik parçalanır</p>`;
             lucide.createIcons();
         }
         
@@ -981,19 +1283,19 @@
             const snapshot = await getDocs(q);
             const logs = snapshot.docs.map(d => d.data());
             logs.sort((a, b) => b.timestamp - a.timestamp);
-            if (logs.length === 0) modalRefs.logsCont.innerHTML = `<div class="text-center text-gray-500 py-12"><i data-lucide="history" class="w-12 h-12 mx-auto mb-3 opacity-30"></i><p>Log yok.</p></div>`;
-            else modalRefs.logsCont.innerHTML = `<div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">` + logs.map(l => `<div class="p-4 border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors"><div class="flex items-center justify-between mb-2"><span class="text-xs font-semibold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-2 py-1 rounded">${l.type==='update'?'Düzenleme':'İşlem'}</span><span class="text-xs text-gray-400">${new Date(l.timestamp).toLocaleString('tr-TR')}</span></div><ul class="space-y-1">${l.changes.map(c => `<li class="text-sm text-gray-700 flex items-start gap-2"><i data-lucide="arrow-right" class="w-4 h-4 text-gray-400 mt-0.5 shrink-0"></i>${c}</li>`).join('')}</ul></div>`).join('') + `</div>`;
+            if (logs.length === 0) modalRefs.logsCont.innerHTML = `<div class="text-center text-gray-500 dark:text-gray-400 py-12"><i data-lucide="history" class="w-12 h-12 mx-auto mb-3 opacity-30"></i><p>Log yok.</p></div>`;
+            else modalRefs.logsCont.innerHTML = `<div class="bg-white dark:bg-gray-700/50 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">` + logs.map(l => `<div class="p-4 border-b border-gray-100 dark:border-gray-700 last:border-0 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"><div class="flex items-center justify-between mb-2"><span class="text-xs font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 px-2 py-1 rounded">${l.type==='update'?'Düzenleme':'İşlem'}</span><span class="text-xs text-gray-400">${new Date(l.timestamp).toLocaleString('tr-TR')}</span></div><ul class="space-y-1">${l.changes.map(c => `<li class="text-sm text-gray-700 dark:text-gray-300 flex items-start gap-2"><i data-lucide="arrow-right" class="w-4 h-4 text-gray-400 mt-0.5 shrink-0"></i>${c}</li>`).join('')}</ul></div>`).join('') + `</div>`;
             lucide.createIcons();
         }
 
         function closeModal() { modalRefs.modal.classList.add('opacity-0'); modalRefs.content.classList.add('scale-95'); setTimeout(() => modalRefs.modal.classList.add('hidden'), 300); }
         function switchModalTab(tab) {
-            if(tab === 'file') { modalRefs.fileCont.classList.remove('hidden'); modalRefs.fileCont.parentElement.classList.remove('hidden'); modalRefs.logsCont.classList.add('hidden'); modalRefs.tabFile.className="flex-1 py-3 text-sm font-medium text-center transition-colors text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50/50"; modalRefs.tabLogs.className="flex-1 py-3 text-sm font-medium text-center transition-colors text-gray-500 hover:text-gray-700 hover:bg-gray-50"; }
-            else { modalRefs.fileCont.classList.add('hidden'); modalRefs.logsCont.classList.remove('hidden'); modalRefs.tabFile.className="flex-1 py-3 text-sm font-medium text-center transition-colors text-gray-500 hover:text-gray-700 hover:bg-gray-50"; modalRefs.tabLogs.className="flex-1 py-3 text-sm font-medium text-center transition-colors text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50/50"; }
+            if(tab === 'file') { modalRefs.fileCont.classList.remove('hidden'); modalRefs.fileCont.parentElement.classList.remove('hidden'); modalRefs.logsCont.classList.add('hidden'); modalRefs.tabFile.className="flex-1 py-3 text-sm font-medium text-center transition-colors text-indigo-600 dark:text-indigo-400 border-b-2 border-indigo-600 dark:border-indigo-400 bg-indigo-50/50 dark:bg-indigo-900/20"; modalRefs.tabLogs.className="flex-1 py-3 text-sm font-medium text-center transition-colors text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700"; }
+            else { modalRefs.fileCont.classList.add('hidden'); modalRefs.logsCont.classList.remove('hidden'); modalRefs.tabFile.className="flex-1 py-3 text-sm font-medium text-center transition-colors text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700"; modalRefs.tabLogs.className="flex-1 py-3 text-sm font-medium text-center transition-colors text-indigo-600 dark:text-indigo-400 border-b-2 border-indigo-600 dark:border-indigo-400 bg-indigo-50/50 dark:bg-indigo-900/20"; }
         }
         function downloadFile() { if(!currentDocData)return; const link=document.createElement('a'); link.href=currentDocData; link.download=window.currentDownloadName; document.body.appendChild(link); link.click(); document.body.removeChild(link); }
         function formatCurrency(val) { return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(val); }
-        function getCategoryColor(cat) { const c = {'Ofis':'bg-blue-100 text-blue-700','Yemek':'bg-orange-100 text-orange-700','Ulaşım':'bg-green-100 text-green-700','Konaklama':'bg-purple-100 text-purple-700','Personel':'bg-pink-100 text-pink-700','Diğer':'bg-gray-100 text-gray-700'}; return c[cat]||'bg-gray-100 text-gray-800'; }
+        function getCategoryColor(cat) { const c = {'Ofis':'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300','Yemek':'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300','Ulaşım':'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300','Konaklama':'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300','Personel':'bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-300','Diğer':'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'}; return c[cat]||'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'; }
         function setLoadingForm(l) { btnSubmit.disabled=l; btnSubmit.innerHTML = l ? `<div class="loader w-4 h-4 border-2 border-t-white mr-2"></div> İşleniyor...` : `<span>${editingId?'Değişiklikleri Kaydet':'Gideri Kaydet'}</span>`; }
         function showError(msg) { errorMsg.querySelector('span').innerText=msg; errorMsg.classList.remove('hidden'); setTimeout(()=>errorMsg.classList.add('hidden'),5000); }
     </script>
