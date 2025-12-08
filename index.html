@@ -373,11 +373,13 @@
             });
         }
 
-        // --- VERİ DİNLEME (FIRESTORE) ---
+        // --- VERİ DİNLEME (FIRESTORE - PUBLIC SHARED) ---
         function startDataListener() {
+            // Artık currentUser.uid yerine 'public/data' kullanıyoruz
             if (!currentUser) return;
 
-            const q = query(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'expenses'));
+            // ÖNEMLİ: Veriler artık herkese açık/ortak alanda (public/data/expenses)
+            const q = query(collection(db, 'artifacts', appId, 'public', 'data', 'expenses'));
 
             onSnapshot(q, (snapshot) => {
                 const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -629,13 +631,13 @@
                         updates.fileName = fileName;
                         updates.fileType = fileType;
                         updates.hasFile = true;
-                        // Chunk upload
+                        // Chunk upload (Public path)
                         await uploadFileChunks(editingId, fileData);
                         changes.push(`Yeni dosya yüklendi: ${fileName}`);
                     }
 
                     if (Object.keys(updates).length > 0) {
-                        await updateDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'expenses', editingId), updates);
+                        await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'expenses', editingId), updates);
                         await createLog(editingId, changes);
                     }
                 } else {
@@ -649,7 +651,8 @@
                         isDeleted: false
                     };
 
-                    const docRef = await addDoc(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'expenses'), newDoc);
+                    // PATH DEĞİŞTİ: users/{uid} yerine public/data/expenses
+                    const docRef = await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'expenses'), newDoc);
                     
                     if (fileData) {
                         await uploadFileChunks(docRef.id, fileData);
@@ -674,7 +677,8 @@
                 chunks.push(fullBase64.slice(i, i + CHUNK_SIZE));
             }
             const promises = chunks.map((chunkData, index) => {
-                return addDoc(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'expense_chunks'), {
+                // PATH DEĞİŞTİ: public/data/expense_chunks
+                return addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'expense_chunks'), {
                     parentExpenseId: parentId,
                     index: index,
                     data: chunkData
@@ -685,7 +689,8 @@
 
         async function createLog(expenseId, changes) {
             if (!changes || changes.length === 0) return;
-            await addDoc(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'logs'), {
+            // PATH DEĞİŞTİ: public/data/logs
+            await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'logs'), {
                 expenseId, changes, timestamp: Date.now(), type: 'update'
             });
         }
@@ -759,21 +764,24 @@
         // --- SİLME / GERİ YÜKLEME ---
         async function softDelete(id) {
             if (confirm('Bu kaydı çöp kutusuna taşımak istediğinize emin misiniz?')) {
-                await updateDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'expenses', id), { isDeleted: true });
+                // PATH DEĞİŞTİ: public/data/expenses
+                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'expenses', id), { isDeleted: true });
                 await createLog(id, ['Kayıt çöp kutusuna taşındı.']);
             }
         }
 
         async function restoreExpense(id) {
-            await updateDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'expenses', id), { isDeleted: false });
+            // PATH DEĞİŞTİ: public/data/expenses
+            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'expenses', id), { isDeleted: false });
             await createLog(id, ['Kayıt geri yüklendi.']);
         }
 
         async function permanentDelete(id) {
             if (confirm('DİKKAT: Bu kayıt ve bağlı dosyalar kalıcı olarak silinecektir. Devam edilsin mi?')) {
-                await deleteDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'expenses', id));
-                // Chunkları da sil
-                const q = query(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'expense_chunks'), where('parentExpenseId', '==', id));
+                // PATH DEĞİŞTİ: public/data/expenses
+                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'expenses', id));
+                // Chunkları da sil - PATH DEĞİŞTİ: public/data/expense_chunks
+                const q = query(collection(db, 'artifacts', appId, 'public', 'data', 'expense_chunks'), where('parentExpenseId', '==', id));
                 const snapshot = await getDocs(q);
                 const batch = writeBatch(db);
                 snapshot.docs.forEach(d => batch.delete(d.ref));
@@ -813,8 +821,8 @@
                     if (expense.fileData) {
                         fullString = expense.fileData; // Eski veri
                     } else {
-                        // Chunkları topla
-                        const q = query(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'expense_chunks'), where('parentExpenseId', '==', expense.id));
+                        // Chunkları topla - PATH DEĞİŞTİ: public/data/expense_chunks
+                        const q = query(collection(db, 'artifacts', appId, 'public', 'data', 'expense_chunks'), where('parentExpenseId', '==', expense.id));
                         const snapshot = await getDocs(q);
                         const chunks = snapshot.docs.map(d => d.data());
                         chunks.sort((a, b) => a.index - b.index);
@@ -875,13 +883,14 @@
                 lucide.createIcons();
             }
 
-            // Logları Getir (Async olarak arka planda)
+            // Logları Getir (Async olarak arka planda) - PATH DEĞİŞTİ: public/data/logs
             fetchLogs(expense.id);
         }
 
         async function fetchLogs(expenseId) {
             try {
-                const q = query(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'logs'), where('expenseId', '==', expenseId));
+                // PATH DEĞİŞTİ: public/data/logs
+                const q = query(collection(db, 'artifacts', appId, 'public', 'data', 'logs'), where('expenseId', '==', expenseId));
                 const snapshot = await getDocs(q);
                 const logs = snapshot.docs.map(d => d.data());
                 logs.sort((a, b) => b.timestamp - a.timestamp);
