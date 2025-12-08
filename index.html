@@ -1,993 +1,976 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Trash2, FileText, Plus, Upload, TrendingUp, Receipt, PieChart, Wallet, Calendar, RotateCcw, Archive, Eye, X, AlertCircle, Loader2, Pencil, History, XCircle, ArrowRight, ZoomIn, ZoomOut, Download } from 'lucide-react';
-import { initializeApp } from 'firebase/app';
-import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from 'firebase/auth';
-import { 
-  getFirestore, 
-  collection, 
-  addDoc, 
-  deleteDoc, 
-  updateDoc, 
-  getDocs,
-  doc, 
-  onSnapshot,
-  query,
-  where,
-  writeBatch
-} from 'firebase/firestore';
-
-// --- FIREBASE AYARLARI ---
-// Senin gönderdiğin yapılandırma bilgileri buraya eklendi.
-const firebaseConfig = {
-  apiKey: "AIzaSyBYtnQ1E2SQTBx3TwlP56joVH6Ycjhkkas",
-  authDomain: "kasakontrol-294bc.firebaseapp.com",
-  projectId: "kasakontrol-294bc",
-  storageBucket: "kasakontrol-294bc.firebasestorage.app",
-  messagingSenderId: "1072559097960",
-  appId: "1:1072559097960:web:2f831c747408028b9b13dd",
-  measurementId: "G-D6PHMX93VQ"
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-
-// App ID (Genelde sabit kalabilir veya kendi ID'nizi verebilirsiniz)
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-
-export default function App() {
-  const [user, setUser] = useState(null);
-  const [expenses, setExpenses] = useState([]);
-  const [loading, setLoading] = useState(true);
-  
-  // View State
-  const [currentView, setCurrentView] = useState('active');
-  const [viewingDoc, setViewingDoc] = useState(null); 
-
-  // Form State
-  const [editingId, setEditingId] = useState(null); // Düzenlenen kaydın ID'si
-  const [receiptNo, setReceiptNo] = useState('');
-  const [amount, setAmount] = useState('');
-  const [category, setCategory] = useState('Ofis');
-  const [description, setDescription] = useState('');
-  const [expenseDate, setExpenseDate] = useState(new Date().toISOString().split('T')[0]);
-  
-  // File State
-  const [fileName, setFileName] = useState('');
-  const [fileData, setFileData] = useState(null); 
-  const [fileType, setFileType] = useState('');
-  
-  // UI State
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errorMsg, setErrorMsg] = useState('');
-
-  const categories = [
-    { id: 'ofis', label: 'Ofis Giderleri', color: 'bg-blue-100 text-blue-700' },
-    { id: 'yemek', label: 'Yemek & İkram', color: 'bg-orange-100 text-orange-700' },
-    { id: 'ulasim', label: 'Ulaşım & Yakıt', color: 'bg-green-100 text-green-700' },
-    { id: 'konaklama', label: 'Konaklama', color: 'bg-purple-100 text-purple-700' },
-    { id: 'personel', label: 'Personel', color: 'bg-pink-100 text-pink-700' },
-    { id: 'diger', label: 'Diğer', color: 'bg-gray-100 text-gray-700' },
-  ];
-
-  // 1. Authentication
-  useEffect(() => {
-    const initAuth = async () => {
-      try {
-        // Önce ortamın kendi token'ını deniyoruz (Platform kuralı gereği)
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-          await signInWithCustomToken(auth, __initial_auth_token);
-        } else {
-          // Token yoksa anonim giriş yap
-          await signInAnonymously(auth);
-        }
-      } catch (error) {
-        console.warn("Varsayılan giriş başarısız, anonim giriş deneniyor:", error);
-        // Eğer proje uyuşmazlığı (auth/custom-token-mismatch) olursa
-        // catch bloğuna düşer ve burada senin kendi projene Anonim giriş yapar.
-        try {
-          await signInAnonymously(auth);
-        } catch (anonError) {
-          console.error("Anonim giriş hatası:", anonError);
-          setErrorMsg("Giriş yapılamadı. Lütfen Firebase Console'dan Anonim girişi açtığınızdan emin olun.");
-        }
-      }
-    };
-    initAuth();
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Şirket Gider Takip Sistemi</title>
     
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-    });
-    return () => unsubscribe();
-  }, []);
-
-  // 2. Firestore Data Listener
-  useEffect(() => {
-    if (!user) return;
-
-    const q = query(
-      collection(db, 'artifacts', appId, 'users', user.uid, 'expenses')
-    );
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const expenseList = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      
-      expenseList.sort((a, b) => {
-        const dateA = a.expenseDate ? new Date(a.expenseDate) : new Date(a.createdAt);
-        const dateB = b.expenseDate ? new Date(b.expenseDate) : new Date(b.createdAt);
-        return dateB - dateA;
-      });
-      
-      setExpenses(expenseList);
-      setLoading(false);
-    }, (error) => {
-      console.error("Data fetch error:", error);
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, [user]);
-
-  // Handle File Selection
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    setErrorMsg('');
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
     
-    if (file) {
-      if (file.size > 4 * 1024 * 1024) {
-        setErrorMsg('Dosya boyutu çok yüksek! Lütfen 4MB altındaki dosyaları yükleyiniz.');
-        e.target.value = ""; 
-        setFileName('');
-        setFileData(null);
-        return;
-      }
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
 
-      setFileName(file.name);
-      setFileType(file.type);
-
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFileData(reader.result);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  // Helper: Chunk Data and Upload
-  const uploadFileChunks = async (parentId, fullBase64) => {
-    const CHUNK_SIZE = 800 * 1024; 
-    const chunks = [];
-    
-    for (let i = 0; i < fullBase64.length; i += CHUNK_SIZE) {
-      chunks.push(fullBase64.slice(i, i + CHUNK_SIZE));
-    }
-
-    const promises = chunks.map((chunkData, index) => {
-      return addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'expense_chunks'), {
-        parentExpenseId: parentId,
-        index: index,
-        data: chunkData
-      });
-    });
-
-    await Promise.all(promises);
-  };
-
-  // Helper: Create Log Entry
-  const createLog = async (expenseId, changes) => {
-    if (!changes || changes.length === 0) return;
-    
-    await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'logs'), {
-      expenseId,
-      changes,
-      timestamp: Date.now(),
-      type: 'update'
-    });
-  };
-
-  // Start Editing
-  const handleEditClick = (expense) => {
-    setEditingId(expense.id);
-    setReceiptNo(expense.receiptNo);
-    setAmount(expense.amount);
-    setCategory(expense.category);
-    setDescription(expense.description || '');
-    setExpenseDate(expense.expenseDate);
-    // Not: Dosya düzenleme opsiyoneldir, mevcut dosya korunur, yeni dosya seçilirse değişir.
-    setFileName(''); 
-    setFileData(null);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  // Cancel Editing
-  const handleCancelEdit = () => {
-    setEditingId(null);
-    setReceiptNo('');
-    setAmount('');
-    setDescription('');
-    setCategory('Ofis');
-    setFileName('');
-    setFileData(null);
-    setExpenseDate(new Date().toISOString().split('T')[0]);
-    const fileInput = document.getElementById('file-upload');
-    if (fileInput) fileInput.value = "";
-  };
-
-  // Add or Update Expense
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!user || !amount || !receiptNo || !expenseDate) return;
-
-    setIsSubmitting(true);
-    try {
-      
-      if (editingId) {
-        // --- UPDATE LOGIC ---
-        const oldDoc = expenses.find(e => e.id === editingId);
-        const updates = {};
-        const changes = [];
-
-        // Değişiklikleri Kontrol Et
-        if (oldDoc.receiptNo !== receiptNo) {
-          updates.receiptNo = receiptNo;
-          changes.push(`Fiş No: ${oldDoc.receiptNo} -> ${receiptNo}`);
-        }
-        if (parseFloat(oldDoc.amount) !== parseFloat(amount)) {
-          updates.amount = parseFloat(amount);
-          changes.push(`Tutar: ${formatCurrency(oldDoc.amount)} -> ${formatCurrency(amount)}`);
-        }
-        if (oldDoc.category !== category) {
-          updates.category = category;
-          changes.push(`Kategori: ${oldDoc.category} -> ${category}`);
-        }
-        if (oldDoc.description !== description) {
-          updates.description = description;
-          changes.push(`Açıklama güncellendi.`);
-        }
-        if (oldDoc.expenseDate !== expenseDate) {
-          updates.expenseDate = expenseDate;
-          changes.push(`Tarih: ${oldDoc.expenseDate} -> ${expenseDate}`);
-        }
-
-        // Dosya değiştiyse
-        if (fileData) {
-          updates.fileName = fileName;
-          updates.fileType = fileType;
-          updates.hasFile = true;
-          // Eski parçaları silmek gerekebilir ama karmaşıklık olmasın diye sadece yeni parçaları ekliyoruz.
-          // Gerçek bir app'te eski chunk'ları silmek gerekir.
-          await uploadFileChunks(editingId, fileData);
-          changes.push(`Yeni dosya yüklendi: ${fileName}`);
-        }
-
-        if (Object.keys(updates).length > 0) {
-          await updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'expenses', editingId), updates);
-          await createLog(editingId, changes);
-        }
-
-        handleCancelEdit(); // Reset form
-
-      } else {
-        // --- CREATE LOGIC ---
-        const docRef = await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'expenses'), {
-          receiptNo,
-          amount: parseFloat(amount),
-          category,
-          description,
-          expenseDate,
-          fileName: fileName || 'Dosya Yok',
-          fileType: fileType,
-          hasFile: !!fileData,
-          createdAt: Date.now(),
-          isDeleted: false,
-        });
-
-        if (fileData) {
-          await uploadFileChunks(docRef.id, fileData);
-        }
+    <style>
+        /* Özel Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #c7c7c7; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #a0a0a0; }
         
-        // İlk oluşturma logu (Opsiyonel)
-        // await createLog(docRef.id, ['Kayıt oluşturuldu']);
-
-        // Reset Form
-        setReceiptNo('');
-        setAmount('');
-        setDescription('');
-        setFileName('');
-        setFileData(null);
-        setFileType('');
-        setExpenseDate(new Date().toISOString().split('T')[0]);
-        document.getElementById('file-upload').value = ""; 
-      }
-
-    } catch (error) {
-      console.error("İşlem hatası:", error);
-      setErrorMsg("İşlem sırasında bir hata oluştu.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  // Soft Delete
-  const handleSoftDelete = async (id) => {
-    if (!user) return;
-    if (window.confirm('Bu kaydı çöp kutusuna taşımak istediğinize emin misiniz?')) {
-      try {
-        await updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'expenses', id), { isDeleted: true });
-        await createLog(id, ['Kayıt çöp kutusuna taşındı.']);
-      } catch (error) { console.error(error); }
-    }
-  };
-
-  // Restore
-  const handleRestore = async (id) => {
-    if (!user) return;
-    try {
-      await updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'expenses', id), { isDeleted: false });
-      await createLog(id, ['Kayıt geri yüklendi.']);
-    } catch (error) { console.error(error); }
-  };
-
-  // Permanent Delete
-  const handlePermanentDelete = async (id) => {
-    if (!user) return;
-    if (window.confirm('DİKKAT: Bu kayıt ve bağlı dosyalar kalıcı olarak silinecektir. Devam edilsin mi?')) {
-      try {
-        await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'expenses', id));
-        // Not: Loglar ana kayıt silindiği için "sahipsiz" kalır, genelde bu kabul edilir veya loglar da silinir.
-        
-        const q = query(
-          collection(db, 'artifacts', appId, 'users', user.uid, 'expense_chunks'),
-          where('parentExpenseId', '==', id)
-        );
-        const snapshot = await getDocs(q);
-        const batch = writeBatch(db);
-        snapshot.docs.forEach((chunkDoc) => {
-          batch.delete(chunkDoc.ref);
-        });
-        await batch.commit();
-
-      } catch (error) { console.error(error); }
-    }
-  };
-
-  // --- Calculations & Filters ---
-  const filteredExpenses = useMemo(() => {
-    return expenses.filter(item => {
-      if (currentView === 'active') return !item.isDeleted;
-      else return item.isDeleted;
-    });
-  }, [expenses, currentView]);
-
-  const activeExpenses = expenses.filter(item => !item.isDeleted);
-  
-  const totalAmount = useMemo(() => activeExpenses.reduce((sum, item) => sum + (item.amount || 0), 0), [activeExpenses]);
-
-  const categoryCounts = useMemo(() => {
-    const counts = {};
-    activeExpenses.forEach(item => {
-      counts[item.category] = (counts[item.category] || 0) + (item.amount || 0);
-    });
-    return counts;
-  }, [activeExpenses]);
-
-  const formatCurrency = (val) => new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(val);
-  const formatDate = (dateString) => dateString ? new Date(dateString).toLocaleDateString('tr-TR') : '-';
-
-  // --- MODAL COMPONENT (Reassembles Chunks) ---
-  const DocumentModal = ({ doc, onClose }) => {
-    const [docData, setDocData] = useState(null);
-    const [isLoading, setIsLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState('file'); // 'file' or 'logs'
-    const [logs, setLogs] = useState([]);
-    const [logsLoading, setLogsLoading] = useState(false);
-    const [isZoomed, setIsZoomed] = useState(false);
-
-    // Dosya Getirme
-    useEffect(() => {
-      const fetchFile = async () => {
-        if (!doc.hasFile) {
-          setIsLoading(false);
-          return;
+        .loader {
+            border: 3px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 3px solid #4f46e5;
+            width: 20px;
+            height: 20px;
+            -webkit-animation: spin 1s linear infinite; /* Safari */
+            animation: spin 1s linear infinite;
         }
-        try {
-          if (doc.fileData) {
-            setDocData(doc.fileData);
-            setIsLoading(false);
-            return;
-          }
-          const q = query(
-            collection(db, 'artifacts', appId, 'users', user.uid, 'expense_chunks'),
-            where('parentExpenseId', '==', doc.id)
-          );
-          const snapshot = await getDocs(q);
-          const chunks = snapshot.docs.map(d => d.data());
-          chunks.sort((a, b) => a.index - b.index);
-          const fullString = chunks.map(c => c.data).join('');
-          setDocData(fullString);
-        } catch (err) {
-          console.error("Dosya getirme hatası:", err);
-        } finally {
-          setIsLoading(false);
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
-      };
-      fetchFile();
-    }, [doc]);
+    </style>
+</head>
+<body class="bg-gray-50 font-sans text-gray-800 min-h-screen">
 
-    // Logları Getirme
-    useEffect(() => {
-      if (activeTab === 'logs') {
-        setLogsLoading(true);
-        const fetchLogs = async () => {
-          try {
-            const q = query(
-              collection(db, 'artifacts', appId, 'users', user.uid, 'logs'),
-              where('expenseId', '==', doc.id)
-            );
-            const snapshot = await getDocs(q);
-            const logsData = snapshot.docs.map(d => d.data());
-            
-            // Client-side sorting (Yeniden eskiye)
-            logsData.sort((a, b) => b.timestamp - a.timestamp);
-            
-            setLogs(logsData);
-          } catch (error) {
-            console.error("Log getirme hatası:", error);
-          } finally {
-            setLogsLoading(false);
-          }
-        };
-        fetchLogs();
-      }
-    }, [activeTab, doc]);
-
-    // İndirme Fonksiyonu
-    const handleDownload = () => {
-      if (!docData) return;
-      const link = document.createElement('a');
-      link.href = docData;
-      link.download = doc.fileName || `belge-${doc.receiptNo}`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    };
-
-    if (!doc) return null;
-    const isPdf = doc.fileType?.includes('pdf') || doc.fileName?.toLowerCase().endsWith('.pdf');
-
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-        <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl h-[85vh] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
-          
-          {/* Header */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gray-50">
-            <div>
-              <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                {doc.receiptNo}
-                {doc.isDeleted && <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full">Silindi</span>}
-              </h3>
-              <p className="text-sm text-gray-500">{doc.category} • {formatDate(doc.expenseDate)}</p>
-            </div>
-            <button onClick={onClose} className="p-2 hover:bg-gray-200 rounded-full transition-colors">
-              <X className="w-6 h-6 text-gray-600" />
-            </button>
-          </div>
-
-          {/* Tabs */}
-          <div className="flex border-b border-gray-200">
-            <button
-              onClick={() => setActiveTab('file')}
-              className={`flex-1 py-3 text-sm font-medium text-center transition-colors ${
-                activeTab === 'file' ? 'text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50/50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              <div className="flex items-center justify-center gap-2">
-                <FileText className="w-4 h-4" />
-                Dosya Görüntüle
-              </div>
-            </button>
-            <button
-              onClick={() => setActiveTab('logs')}
-              className={`flex-1 py-3 text-sm font-medium text-center transition-colors ${
-                activeTab === 'logs' ? 'text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50/50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              <div className="flex items-center justify-center gap-2">
-                <History className="w-4 h-4" />
-                İşlem Geçmişi (Loglar)
-              </div>
-            </button>
-          </div>
-
-          {/* Content */}
-          <div className={`flex-1 bg-gray-100 p-4 overflow-auto relative ${isZoomed && activeTab === 'file' ? '' : 'flex items-center justify-center'}`}>
-            
-            {activeTab === 'file' && (
-              <div className="w-full h-full flex items-center justify-center relative">
-                {isLoading ? (
-                  <div className="flex flex-col items-center gap-3 text-indigo-600">
-                    <Loader2 className="w-10 h-10 animate-spin" />
-                    <span className="font-medium">Dosya hazırlanıyor...</span>
-                  </div>
-                ) : docData ? (
-                  isPdf ? (
-                    <iframe src={docData} className="w-full h-full rounded-lg shadow-sm bg-white" title="PDF Viewer" />
-                  ) : (
-                    <>
-                      {/* Zoom Butonu (Sadece Resimler için) */}
-                      <div className="absolute top-2 right-2 z-10">
-                         <button
-                           onClick={(e) => { e.stopPropagation(); setIsZoomed(!isZoomed); }}
-                           className="p-2 bg-white rounded-full shadow-lg hover:bg-gray-50 text-gray-700 transition-all border border-gray-200"
-                           title={isZoomed ? "Küçült" : "Büyüt"}
-                         >
-                           {isZoomed ? <ZoomOut className="w-5 h-5" /> : <ZoomIn className="w-5 h-5" />}
-                         </button>
-                      </div>
-                      
-                      <img 
-                        src={docData} 
-                        alt="Fiş Görseli" 
-                        onClick={() => setIsZoomed(!isZoomed)}
-                        className={`transition-all duration-200 rounded-lg shadow-sm ${
-                           isZoomed 
-                           ? 'w-auto h-auto max-w-none cursor-zoom-out' 
-                           : 'max-w-full max-h-full object-contain cursor-zoom-in' 
-                        }`}
-                        style={isZoomed ? { minWidth: '100%' } : {}}
-                      />
-                    </>
-                  )
-                ) : (
-                  <div className="text-center text-gray-400">
-                    <FileText className="w-16 h-16 mx-auto mb-3 opacity-50" />
-                    <p>Dosya verisi bulunamadı.</p>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {activeTab === 'logs' && (
-              <div className="max-w-2xl mx-auto space-y-4 w-full h-full overflow-y-auto">
-                {logsLoading ? (
-                   <div className="flex justify-center p-8"><Loader2 className="w-8 h-8 animate-spin text-gray-400" /></div>
-                ) : logs.length === 0 ? (
-                  <div className="text-center text-gray-500 py-12">
-                    <History className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                    <p>Henüz bir değişiklik kaydı yok.</p>
-                  </div>
-                ) : (
-                  <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-                    {logs.map((log, idx) => (
-                      <div key={idx} className="p-4 border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-xs font-semibold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-2 py-1 rounded">
-                            {log.type === 'update' ? 'Düzenleme' : 'İşlem'}
-                          </span>
-                          <span className="text-xs text-gray-400">
-                            {new Date(log.timestamp).toLocaleString('tr-TR')}
-                          </span>
-                        </div>
-                        <ul className="space-y-1">
-                          {log.changes.map((change, cIdx) => (
-                            <li key={cIdx} className="text-sm text-gray-700 flex items-start gap-2">
-                              <ArrowRight className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
-                              {change}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Footer */}
-          <div className="px-6 py-4 border-t border-gray-200 bg-white flex justify-between items-center">
-             <div className="text-sm text-gray-500 max-w-[50%] truncate">
-                {doc.description || "Açıklama yok"}
-             </div>
-             <div className="flex items-center gap-4">
-                {/* İndirme Butonu */}
-                {docData && (
-                  <button
-                    onClick={handleDownload}
-                    className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors shadow-sm"
-                    title="Dosyayı İndir"
-                  >
-                    <Download className="w-4 h-4" />
-                    <span className="hidden sm:inline">İndir</span>
-                  </button>
-                )}
-                
-                <div className="text-xl font-bold text-gray-900 border-l pl-4 border-gray-200">
-                    {formatCurrency(doc.amount)}
+    <!-- Header -->
+    <header class="bg-white border-b border-gray-200 sticky top-0 z-10">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <div class="bg-indigo-600 p-2 rounded-lg">
+                    <i data-lucide="receipt" class="w-5 h-5 text-white"></i>
                 </div>
-             </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  if (loading) return (
-    <div className="flex items-center justify-center h-screen bg-gray-50 text-gray-500">
-      <Loader2 className="w-8 h-8 animate-spin mr-2" /> Yükleniyor...
-    </div>
-  );
-
-  return (
-    <div className="min-h-screen bg-gray-50 font-sans text-gray-800">
-      
-      {/* Modal */}
-      {viewingDoc && <DocumentModal doc={viewingDoc} onClose={() => setViewingDoc(null)} />}
-
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="bg-indigo-600 p-2 rounded-lg">
-              <Receipt className="w-5 h-5 text-white" />
+                <h1 class="text-xl font-bold text-gray-900 tracking-tight">Şirket Gider Yönetimi</h1>
             </div>
-            <h1 className="text-xl font-bold text-gray-900 tracking-tight">Şirket Gider Yönetimi</h1>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="flex bg-gray-100 rounded-lg p-1">
-              <button
-                onClick={() => setCurrentView('active')}
-                className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${
-                  currentView === 'active' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                Giderler
-              </button>
-              <button
-                onClick={() => setCurrentView('trash')}
-                className={`px-3 py-1.5 text-sm font-medium rounded-md flex items-center gap-1 transition-all ${
-                  currentView === 'trash' ? 'bg-white text-red-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-                Çöp Kutusu
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        
-        {/* İstatistikler */}
-        {currentView === 'active' && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex items-start justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-500 mb-1">Toplam Gider</p>
-                <h2 className="text-3xl font-bold text-gray-900">{formatCurrency(totalAmount)}</h2>
-              </div>
-              <div className="p-3 bg-red-50 rounded-full">
-                <TrendingUp className="w-6 h-6 text-red-600" />
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex items-start justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-500 mb-1">İşlenen Fiş</p>
-                <h2 className="text-3xl font-bold text-gray-900">{activeExpenses.length} <span className="text-base font-normal text-gray-400">Adet</span></h2>
-              </div>
-              <div className="p-3 bg-indigo-50 rounded-full">
-                <FileText className="w-6 h-6 text-indigo-600" />
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex items-start justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-500 mb-1">En Çok Harcama</p>
-                <h2 className="text-lg font-bold text-gray-900 truncate">
-                  {Object.keys(categoryCounts).length > 0 
-                    ? Object.entries(categoryCounts).sort((a,b) => b[1] - a[1])[0][0] 
-                    : '-'}
-                </h2>
-              </div>
-              <div className="p-3 bg-orange-50 rounded-full">
-                <PieChart className="w-6 h-6 text-orange-600" />
-              </div>
-            </div>
-          </div>
-        )}
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
-          {/* Form */}
-          {currentView === 'active' ? (
-            <div className="lg:col-span-1">
-              <div className={`bg-white rounded-xl shadow-sm border overflow-hidden sticky top-24 transition-colors ${editingId ? 'border-indigo-300 ring-2 ring-indigo-100' : 'border-gray-200'}`}>
-                <div className={`px-6 py-4 border-b flex items-center justify-between ${editingId ? 'bg-indigo-50 border-indigo-200' : 'bg-gray-50 border-gray-200'}`}>
-                  <div className="flex items-center gap-2">
-                    {editingId ? <Pencil className="w-5 h-5 text-indigo-600" /> : <Plus className="w-5 h-5 text-gray-500" />}
-                    <h3 className={`font-semibold ${editingId ? 'text-indigo-900' : 'text-gray-900'}`}>
-                      {editingId ? 'Kayıt Düzenleniyor' : 'Yeni Fiş Ekle'}
-                    </h3>
-                  </div>
-                  {editingId && (
-                    <button onClick={handleCancelEdit} className="text-xs text-red-600 hover:text-red-800 font-medium flex items-center gap-1">
-                      <XCircle className="w-4 h-4" /> İptal Et
+            <div class="flex items-center gap-4">
+                <div class="flex bg-gray-100 rounded-lg p-1">
+                    <button id="btn-view-active" class="px-3 py-1.5 text-sm font-medium rounded-md transition-all bg-white text-gray-900 shadow-sm">
+                        Giderler
                     </button>
-                  )}
+                    <button id="btn-view-trash" class="px-3 py-1.5 text-sm font-medium rounded-md flex items-center gap-1 transition-all text-gray-500 hover:text-gray-700">
+                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                        Çöp Kutusu
+                    </button>
                 </div>
-                
-                <form onSubmit={handleSubmit} className="p-6 space-y-4">
-                  {errorMsg && (
-                    <div className="p-3 bg-red-50 text-red-700 text-sm rounded-lg flex items-center gap-2">
-                      <AlertCircle className="w-4 h-4" />
-                      {errorMsg}
-                    </div>
-                  )}
+            </div>
+        </div>
+    </header>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Fiş Tarihi</label>
-                    <input
-                      type="date"
-                      required
-                      value={expenseDate}
-                      onChange={(e) => setExpenseDate(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Fiş No</label>
-                    <input
-                      type="text"
-                      required
-                      value={receiptNo}
-                      onChange={(e) => setReceiptNo(e.target.value)}
-                      placeholder="Örn: TR-2024-001"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Tutar (TL)</label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-2 text-gray-400">₺</span>
-                      <input
-                        type="number"
-                        required
-                        step="0.01"
-                        value={amount}
-                        onChange={(e) => setAmount(e.target.value)}
-                        placeholder="0.00"
-                        className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
-                      />
+    <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- Yükleniyor Göstergesi (Tam Sayfa) -->
+        <div id="page-loader" class="fixed inset-0 bg-white z-50 flex flex-col items-center justify-center">
+            <div class="loader w-10 h-10 border-4 border-t-indigo-600 mb-4"></div>
+            <p class="text-gray-500">Sistem Yükleniyor...</p>
+        </div>
+
+        <!-- İstatistikler -->
+        <div id="stats-container" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <!-- JS ile doldurulacak -->
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- FORM ALANI -->
+            <div class="lg:col-span-1" id="form-section">
+                <div id="form-card" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden sticky top-24 transition-colors">
+                    <div id="form-header" class="bg-gray-50 px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <i id="form-icon" data-lucide="plus" class="w-5 h-5 text-gray-500"></i>
+                            <h3 id="form-title" class="font-semibold text-gray-900">Yeni Fiş Ekle</h3>
+                        </div>
+                        <button id="btn-cancel-edit" class="hidden text-xs text-red-600 hover:text-red-800 font-medium flex items-center gap-1">
+                            <i data-lucide="x-circle" class="w-4 h-4"></i> İptal Et
+                        </button>
                     </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Gider Kalemi</label>
-                    <select
-                      value={category}
-                      onChange={(e) => setCategory(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-white outline-none"
-                    >
-                      {categories.map(cat => (
-                        <option key={cat.id} value={cat.label}>{cat.label}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Açıklama</label>
-                    <input
-                      type="text"
-                      value={description}
-                      onChange={(e) => setDescription(e.target.value)}
-                      placeholder="Opsiyonel"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
-                    />
-                  </div>
-                  
-                  {/* Dosya Yükleme */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      {editingId ? 'Dosyayı Değiştir (Opsiyonel)' : 'PDF / Görsel (Max 4MB)'}
-                    </label>
-                    <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-indigo-500 transition-colors bg-gray-50 hover:bg-white cursor-pointer relative">
-                      <input 
-                        id="file-upload" 
-                        name="file-upload" 
-                        type="file" 
-                        accept=".pdf, .jpg, .png, .jpeg"
-                        onChange={handleFileChange}
-                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                      />
-                      <div className="space-y-1 text-center pointer-events-none">
-                        {fileName ? (
-                          <div className="flex flex-col items-center justify-center text-green-600 gap-1">
-                            <FileText className="h-6 w-6" />
-                            <span className="text-sm font-medium truncate max-w-[200px]">{fileName}</span>
-                            <span className="text-xs text-gray-400">Yüklemeye hazır</span>
-                          </div>
-                        ) : (
-                          <>
-                            <Upload className="mx-auto h-8 w-8 text-gray-400" />
-                            <div className="flex text-sm text-gray-600 justify-center mt-2">
-                              <span className="font-medium text-indigo-600">Dosya Seç</span>
+                    
+                    <form id="expense-form" class="p-6 space-y-4">
+                        <input type="hidden" id="editing-id"> <!-- Düzenleme ID'si -->
+
+                        <!-- Hata Mesajı -->
+                        <div id="error-msg" class="hidden p-3 bg-red-50 text-red-700 text-sm rounded-lg flex items-center gap-2">
+                            <i data-lucide="alert-circle" class="w-4 h-4"></i>
+                            <span></span>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Fiş Tarihi</label>
+                            <input type="date" id="expense-date" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Fiş No</label>
+                            <input type="text" id="receipt-no" placeholder="Örn: TR-2024-001" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Tutar (TL)</label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-2 text-gray-400">₺</span>
+                                <input type="number" id="amount" step="0.01" placeholder="0.00" required class="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
                             </div>
-                            <p className="text-xs text-gray-400 mt-1">Yüksek boyutlu dosyalar otomatik parçalanır</p>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className={`w-full text-white py-2.5 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors ${
-                      editingId 
-                        ? 'bg-indigo-600 hover:bg-indigo-700' 
-                        : 'bg-gray-900 hover:bg-gray-800'
-                    }`}
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        İşleniyor...
-                      </>
-                    ) : (
-                      editingId ? 'Değişiklikleri Kaydet' : 'Gideri Kaydet'
-                    )}
-                  </button>
-                </form>
-              </div>
-            </div>
-          ) : (
-            <div className="lg:col-span-1">
-              <div className="bg-red-50 border border-red-100 rounded-xl p-6">
-                <div className="flex items-center gap-3 mb-2">
-                  <Trash2 className="w-6 h-6 text-red-600" />
-                  <h3 className="font-bold text-red-900">Çöp Kutusu</h3>
-                </div>
-                <p className="text-sm text-red-700">Buradaki kayıtlar silinmek üzere işaretlenmiştir.</p>
-              </div>
-            </div>
-          )}
-
-          {/* Liste */}
-          <div className="lg:col-span-2 space-y-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-gray-900 text-lg">
-                {currentView === 'active' ? 'Son İşlemler' : 'Silinmiş Kayıtlar'}
-              </h3>
-            </div>
-
-            {filteredExpenses.length === 0 ? (
-              <div className="bg-white rounded-xl p-12 text-center border border-dashed border-gray-300">
-                <div className="bg-gray-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                  {currentView === 'active' ? <Wallet className="w-8 h-8 text-gray-400" /> : <Archive className="w-8 h-8 text-gray-400" />}
-                </div>
-                <h3 className="text-lg font-medium text-gray-900">Kayıt Bulunamadı</h3>
-                <p className="text-gray-500 mt-1">
-                  {currentView === 'active' ? 'Yeni bir harcama ekleyin.' : 'Çöp kutusu boş.'}
-                </p>
-              </div>
-            ) : (
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tarih</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fiş Detayı</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kategori</th>
-                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Tutar</th>
-                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">İşlem</th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {filteredExpenses.map((expense) => {
-                        const categoryStyle = categories.find(c => c.label === expense.category)?.color || 'bg-gray-100 text-gray-800';
-                        const displayDate = expense.expenseDate ? formatDate(expense.expenseDate) : formatDate(expense.createdAt);
-                        const hasFile = expense.hasFile || !!expense.fileData; 
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Gider Kalemi</label>
+                            <select id="category" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-white outline-none">
+                                <option value="Ofis">Ofis Giderleri</option>
+                                <option value="Yemek">Yemek & İkram</option>
+                                <option value="Ulaşım">Ulaşım & Yakıt</option>
+                                <option value="Konaklama">Konaklama</option>
+                                <option value="Personel">Personel</option>
+                                <option value="Diğer">Diğer</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Açıklama</label>
+                            <input type="text" id="description" placeholder="Opsiyonel" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                        </div>
                         
-                        return (
-                          <tr key={expense.id} className={`hover:bg-gray-50 transition-colors ${editingId === expense.id ? 'bg-indigo-50/50' : ''}`}>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              <div className="flex flex-col">
-                                <span className="font-medium text-gray-700">{displayDate}</span>
-                                {hasFile ? (
-                                  <span className="flex items-center gap-1 text-xs text-indigo-600 mt-1">
-                                    <FileText className="w-3 h-3" />
-                                    <span className="truncate max-w-[80px]">Dosya Eklı</span>
-                                  </span>
-                                ) : (
-                                  <span className="text-xs text-gray-400 mt-1">Dosya Yok</span>
-                                )}
-                              </div>
-                            </td>
-                            <td className="px-6 py-4">
-                              <div className="text-sm font-medium text-gray-900">{expense.receiptNo}</div>
-                              {expense.description && (
-                                <div className="text-xs text-gray-500 truncate max-w-[150px]">{expense.description}</div>
-                              )}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${categoryStyle}`}>
-                                {expense.category}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-bold text-gray-900">
-                              {formatCurrency(expense.amount)}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                              <div className="flex items-center justify-end gap-2">
-                                {/* Görüntüle */}
-                                <button
-                                  onClick={() => setViewingDoc(expense)}
-                                  title="Görüntüle ve Geçmiş"
-                                  className="text-gray-400 hover:text-indigo-600 transition-colors p-1.5 rounded-md hover:bg-indigo-50"
-                                >
-                                  <Eye className="w-4 h-4" />
-                                </button>
+                        <!-- Dosya Yükleme -->
+                        <div>
+                            <label id="file-label" class="block text-sm font-medium text-gray-700 mb-1">PDF / Görsel (Max 4MB)</label>
+                            <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-indigo-500 transition-colors bg-gray-50 hover:bg-white cursor-pointer relative">
+                                <input id="file-upload" type="file" accept=".pdf, .jpg, .png, .jpeg" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+                                <div class="space-y-1 text-center pointer-events-none" id="file-display-area">
+                                    <i data-lucide="upload" class="mx-auto h-8 w-8 text-gray-400"></i>
+                                    <div class="flex text-sm text-gray-600 justify-center mt-2">
+                                        <span class="font-medium text-indigo-600">Dosya Seç</span>
+                                    </div>
+                                    <p class="text-xs text-gray-400 mt-1">Yüksek boyutlu dosyalar otomatik parçalanır</p>
+                                </div>
+                            </div>
+                        </div>
 
-                                {currentView === 'active' ? (
-                                  <>
-                                    {/* Düzenle */}
-                                    <button
-                                      onClick={() => handleEditClick(expense)}
-                                      title="Düzenle"
-                                      disabled={editingId === expense.id}
-                                      className={`p-1.5 rounded-md transition-colors ${
-                                        editingId === expense.id 
-                                          ? 'text-indigo-600 bg-indigo-100' 
-                                          : 'text-gray-400 hover:text-blue-600 hover:bg-blue-50'
-                                      }`}
-                                    >
-                                      <Pencil className="w-4 h-4" />
-                                    </button>
-                                    {/* Sil */}
-                                    <button 
-                                      onClick={() => handleSoftDelete(expense.id)}
-                                      title="Çöp Kutusuna Taşı"
-                                      className="text-gray-400 hover:text-red-500 transition-colors p-1.5 rounded-md hover:bg-red-50"
-                                    >
-                                      <Trash2 className="w-4 h-4" />
-                                    </button>
-                                  </>
-                                ) : (
-                                  <>
-                                    <button 
-                                      onClick={() => handleRestore(expense.id)}
-                                      title="Geri Yükle"
-                                      className="text-green-500 hover:text-green-700 transition-colors p-1.5 rounded-md hover:bg-green-50"
-                                    >
-                                      <RotateCcw className="w-4 h-4" />
-                                    </button>
-                                    <button 
-                                      onClick={() => handlePermanentDelete(expense.id)}
-                                      title="Kalıcı Olarak Sil"
-                                      className="text-red-500 hover:text-red-700 transition-colors p-1.5 rounded-md hover:bg-red-50"
-                                    >
-                                      <Trash2 className="w-4 h-4" />
-                                    </button>
-                                  </>
-                                )}
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                        <button type="submit" id="btn-submit" class="w-full bg-gray-900 hover:bg-gray-800 text-white py-2.5 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                            <span>Gideri Kaydet</span>
+                        </button>
+                    </form>
                 </div>
-              </div>
-            )}
-          </div>
+            </div>
+
+            <!-- Çöp Kutusu Info (Gizli Başlar) -->
+            <div class="lg:col-span-1 hidden" id="trash-info-section">
+                <div class="bg-red-50 border border-red-100 rounded-xl p-6">
+                    <div class="flex items-center gap-3 mb-2">
+                        <i data-lucide="trash-2" class="w-6 h-6 text-red-600"></i>
+                        <h3 class="font-bold text-red-900">Çöp Kutusu</h3>
+                    </div>
+                    <p class="text-sm text-red-700">Buradaki kayıtlar silinmek üzere işaretlenmiştir.</p>
+                </div>
+            </div>
+
+            <!-- LİSTE ALANI -->
+            <div class="lg:col-span-2 space-y-4">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 id="list-title" class="font-semibold text-gray-900 text-lg">Son İşlemler</h3>
+                </div>
+
+                <div id="empty-state" class="hidden bg-white rounded-xl p-12 text-center border border-dashed border-gray-300">
+                    <div class="bg-gray-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i data-lucide="wallet" class="w-8 h-8 text-gray-400"></i>
+                    </div>
+                    <h3 class="text-lg font-medium text-gray-900">Kayıt Bulunamadı</h3>
+                    <p class="text-gray-500 mt-1">Yeni bir harcama ekleyin.</p>
+                </div>
+
+                <div id="table-container" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tarih</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fiş Detayı</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kategori</th>
+                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Tutar</th>
+                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">İşlem</th>
+                                </tr>
+                            </thead>
+                            <tbody id="expense-list-body" class="bg-white divide-y divide-gray-200">
+                                <!-- JS ile satırlar buraya gelecek -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
 
         </div>
-      </main>
+    </main>
+
+    <!-- MODAL (Belge Görüntüleme) -->
+    <div id="document-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm transition-opacity duration-300 opacity-0">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-4xl h-[85vh] flex flex-col overflow-hidden transform transition-all scale-95" id="modal-content">
+            
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gray-50">
+                <div>
+                    <h3 id="modal-title" class="text-lg font-bold text-gray-900 flex items-center gap-2">Fiş No</h3>
+                    <p id="modal-subtitle" class="text-sm text-gray-500">Kategori • Tarih</p>
+                </div>
+                <button id="btn-close-modal" class="p-2 hover:bg-gray-200 rounded-full transition-colors">
+                    <i data-lucide="x" class="w-6 h-6 text-gray-600"></i>
+                </button>
+            </div>
+
+            <!-- Modal Tabs -->
+            <div class="flex border-b border-gray-200">
+                <button id="tab-file" class="flex-1 py-3 text-sm font-medium text-center transition-colors text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50/50">
+                    <div class="flex items-center justify-center gap-2">
+                        <i data-lucide="file-text" class="w-4 h-4"></i> Dosya Görüntüle
+                    </div>
+                </button>
+                <button id="tab-logs" class="flex-1 py-3 text-sm font-medium text-center transition-colors text-gray-500 hover:text-gray-700 hover:bg-gray-50">
+                    <div class="flex items-center justify-center gap-2">
+                        <i data-lucide="history" class="w-4 h-4"></i> İşlem Geçmişi (Loglar)
+                    </div>
+                </button>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="flex-1 bg-gray-100 p-4 overflow-auto relative">
+                
+                <!-- Dosya Görünümü -->
+                <div id="view-file-container" class="w-full h-full flex items-center justify-center relative">
+                    <!-- İçerik JS ile -->
+                    <div class="text-center text-gray-400">
+                        <div class="loader mx-auto mb-2"></div>
+                        <p>Yükleniyor...</p>
+                    </div>
+                </div>
+
+                <!-- Log Görünümü -->
+                <div id="view-logs-container" class="hidden max-w-2xl mx-auto space-y-4 w-full h-full overflow-y-auto">
+                    <!-- İçerik JS ile -->
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="px-6 py-4 border-t border-gray-200 bg-white flex justify-between items-center">
+                <div id="modal-desc" class="text-sm text-gray-500 max-w-[50%] truncate">Açıklama</div>
+                <div class="flex items-center gap-4">
+                    <button id="btn-download" class="hidden flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors shadow-sm">
+                        <i data-lucide="download" class="w-4 h-4"></i>
+                        <span class="hidden sm:inline">İndir</span>
+                    </button>
+                    <div id="modal-amount" class="text-xl font-bold text-gray-900 border-l pl-4 border-gray-200">0.00 ₺</div>
+                </div>
+            </div>
+        </div>
     </div>
-  );
-}
+
+    <!-- FIREBASE & APP LOGIC -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, deleteDoc, updateDoc, getDocs, doc, onSnapshot, query, where, writeBatch } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // --- YAPILANDIRMA ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyBYtnQ1E2SQTBx3TwlP56joVH6Ycjhkkas",
+            authDomain: "kasakontrol-294bc.firebaseapp.com",
+            projectId: "kasakontrol-294bc",
+            storageBucket: "kasakontrol-294bc.firebasestorage.app",
+            messagingSenderId: "1072559097960",
+            appId: "1:1072559097960:web:2f831c747408028b9b13dd",
+            measurementId: "G-D6PHMX93VQ"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const appId = 'default-app-id';
+
+        // --- STATE ---
+        let currentUser = null;
+        let expenses = [];
+        let currentView = 'active'; // 'active' | 'trash'
+        let editingId = null;
+        let fileData = null; // Base64
+        let fileName = '';
+        let fileType = '';
+        let isZoomed = false;
+        let currentDocData = null; // Modalda gösterilen dosya verisi
+
+        // --- UI REFERANSLARI ---
+        const pageLoader = document.getElementById('page-loader');
+        const expenseForm = document.getElementById('expense-form');
+        const expenseListBody = document.getElementById('expense-list-body');
+        const statsContainer = document.getElementById('stats-container');
+        const btnViewActive = document.getElementById('btn-view-active');
+        const btnViewTrash = document.getElementById('btn-view-trash');
+        const formSection = document.getElementById('form-section');
+        const trashInfoSection = document.getElementById('trash-info-section');
+        const emptyState = document.getElementById('empty-state');
+        const tableContainer = document.getElementById('table-container');
+        const fileUploadInput = document.getElementById('file-upload');
+        const fileDisplayArea = document.getElementById('file-display-area');
+        const errorMsg = document.getElementById('error-msg');
+        const btnSubmit = document.getElementById('btn-submit');
+        const btnCancelEdit = document.getElementById('btn-cancel-edit');
+        const formTitle = document.getElementById('form-title');
+        const formCard = document.getElementById('form-card');
+        const formIcon = document.getElementById('form-icon');
+
+        // Modal Referansları
+        const documentModal = document.getElementById('document-modal');
+        const modalContent = document.getElementById('modal-content');
+        const btnCloseModal = document.getElementById('btn-close-modal');
+        const tabFile = document.getElementById('tab-file');
+        const tabLogs = document.getElementById('tab-logs');
+        const viewFileContainer = document.getElementById('view-file-container');
+        const viewLogsContainer = document.getElementById('view-logs-container');
+        const btnDownload = document.getElementById('btn-download');
+
+        // --- BAŞLANGIÇ ---
+        window.onload = () => {
+            lucide.createIcons();
+            initAuth();
+            setupEventListeners();
+            
+            // Tarih inputuna bugünü ata
+            document.getElementById('expense-date').value = new Date().toISOString().split('T')[0];
+        };
+
+        // --- AUTH ---
+        async function initAuth() {
+            onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    currentUser = user;
+                    console.log("Kullanıcı giriş yaptı:", user.uid);
+                    startDataListener();
+                } else {
+                    signInAnonymously(auth).catch((error) => {
+                        console.error("Giriş hatası:", error);
+                        showError("Giriş yapılamadı. İnternet bağlantınızı kontrol edin.");
+                    });
+                }
+            });
+        }
+
+        // --- EVENT LISTENERS ---
+        function setupEventListeners() {
+            // Görünüm Değiştirme
+            btnViewActive.addEventListener('click', () => changeView('active'));
+            btnViewTrash.addEventListener('click', () => changeView('trash'));
+
+            // Dosya Seçimi
+            fileUploadInput.addEventListener('change', handleFileSelect);
+
+            // Form Submit
+            expenseForm.addEventListener('submit', handleFormSubmit);
+
+            // İptal Butonu
+            btnCancelEdit.addEventListener('click', resetForm);
+
+            // Modal İşlemleri
+            btnCloseModal.addEventListener('click', closeModal);
+            tabFile.addEventListener('click', () => switchModalTab('file'));
+            tabLogs.addEventListener('click', () => switchModalTab('logs'));
+            btnDownload.addEventListener('click', downloadFile);
+            
+            // Modal dışına tıklayınca kapatma
+            documentModal.addEventListener('click', (e) => {
+                if(e.target === documentModal) closeModal();
+            });
+        }
+
+        // --- VERİ DİNLEME (FIRESTORE) ---
+        function startDataListener() {
+            if (!currentUser) return;
+
+            const q = query(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'expenses'));
+
+            onSnapshot(q, (snapshot) => {
+                const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                
+                // Sıralama (Tarihe göre yeni -> eski)
+                list.sort((a, b) => {
+                    const dateA = a.expenseDate ? new Date(a.expenseDate) : new Date(a.createdAt);
+                    const dateB = b.expenseDate ? new Date(b.expenseDate) : new Date(b.createdAt);
+                    return dateB - dateA;
+                });
+
+                expenses = list;
+                renderApp();
+                pageLoader.classList.add('hidden'); // Yükleme bitti
+            }, (error) => {
+                console.error("Veri çekme hatası:", error);
+                showError("Veriler yüklenirken bir hata oluştu.");
+                pageLoader.classList.add('hidden');
+            });
+        }
+
+        // --- RENDER ---
+        function renderApp() {
+            renderStats();
+            renderList();
+            lucide.createIcons(); // Yeni ikonları oluştur
+        }
+
+        function changeView(view) {
+            currentView = view;
+            // Buton Stilleri
+            if (view === 'active') {
+                btnViewActive.className = "px-3 py-1.5 text-sm font-medium rounded-md transition-all bg-white text-gray-900 shadow-sm";
+                btnViewTrash.className = "px-3 py-1.5 text-sm font-medium rounded-md flex items-center gap-1 transition-all text-gray-500 hover:text-gray-700";
+                formSection.classList.remove('hidden');
+                trashInfoSection.classList.add('hidden');
+                document.getElementById('list-title').innerText = "Son İşlemler";
+            } else {
+                btnViewActive.className = "px-3 py-1.5 text-sm font-medium rounded-md transition-all text-gray-500 hover:text-gray-700";
+                btnViewTrash.className = "px-3 py-1.5 text-sm font-medium rounded-md flex items-center gap-1 transition-all bg-white text-red-600 shadow-sm";
+                formSection.classList.add('hidden');
+                trashInfoSection.classList.remove('hidden');
+                document.getElementById('list-title').innerText = "Silinmiş Kayıtlar";
+            }
+            renderApp();
+        }
+
+        function renderStats() {
+            if (currentView !== 'active') {
+                statsContainer.innerHTML = '';
+                return;
+            }
+
+            const activeList = expenses.filter(e => !e.isDeleted);
+            const total = activeList.reduce((sum, item) => sum + (item.amount || 0), 0);
+            
+            // Kategori Hesabı
+            const catCounts = {};
+            activeList.forEach(item => {
+                catCounts[item.category] = (catCounts[item.category] || 0) + (item.amount || 0);
+            });
+            const topCategory = Object.keys(catCounts).length > 0 
+                ? Object.entries(catCounts).sort((a,b) => b[1] - a[1])[0][0] 
+                : '-';
+
+            statsContainer.innerHTML = `
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex items-start justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-500 mb-1">Toplam Gider</p>
+                        <h2 class="text-3xl font-bold text-gray-900">${formatCurrency(total)}</h2>
+                    </div>
+                    <div class="p-3 bg-red-50 rounded-full"><i data-lucide="trending-up" class="w-6 h-6 text-red-600"></i></div>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex items-start justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-500 mb-1">İşlenen Fiş</p>
+                        <h2 class="text-3xl font-bold text-gray-900">${activeList.length} <span class="text-base font-normal text-gray-400">Adet</span></h2>
+                    </div>
+                    <div class="p-3 bg-indigo-50 rounded-full"><i data-lucide="file-text" class="w-6 h-6 text-indigo-600"></i></div>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex items-start justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-500 mb-1">En Çok Harcama</p>
+                        <h2 class="text-lg font-bold text-gray-900 truncate">${topCategory}</h2>
+                    </div>
+                    <div class="p-3 bg-orange-50 rounded-full"><i data-lucide="pie-chart" class="w-6 h-6 text-orange-600"></i></div>
+                </div>
+            `;
+        }
+
+        function renderList() {
+            const filtered = expenses.filter(item => currentView === 'active' ? !item.isDeleted : item.isDeleted);
+            
+            if (filtered.length === 0) {
+                emptyState.classList.remove('hidden');
+                tableContainer.classList.add('hidden');
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+            tableContainer.classList.remove('hidden');
+            expenseListBody.innerHTML = '';
+
+            filtered.forEach(expense => {
+                const date = expense.expenseDate ? new Date(expense.expenseDate).toLocaleDateString('tr-TR') : '-';
+                const hasFile = expense.hasFile || !!expense.fileData;
+                const categoryColors = {
+                    'Ofis': 'bg-blue-100 text-blue-700',
+                    'Yemek': 'bg-orange-100 text-orange-700',
+                    'Ulaşım': 'bg-green-100 text-green-700',
+                    'Konaklama': 'bg-purple-100 text-purple-700',
+                    'Personel': 'bg-pink-100 text-pink-700',
+                    'Diğer': 'bg-gray-100 text-gray-700'
+                };
+                const badgeClass = categoryColors[expense.category] || 'bg-gray-100 text-gray-800';
+                
+                const row = document.createElement('tr');
+                row.className = `hover:bg-gray-50 transition-colors ${editingId === expense.id ? 'bg-indigo-50/50' : ''}`;
+                
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <div class="flex flex-col">
+                            <span class="font-medium text-gray-700">${date}</span>
+                            ${hasFile ? `<span class="flex items-center gap-1 text-xs text-indigo-600 mt-1"><i data-lucide="file-text" class="w-3 h-3"></i><span class="truncate max-w-[80px]">Dosya Var</span></span>` : `<span class="text-xs text-gray-400 mt-1">Dosya Yok</span>`}
+                        </div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="text-sm font-medium text-gray-900">${expense.receiptNo}</div>
+                        <div class="text-xs text-gray-500 truncate max-w-[150px]">${expense.description || ''}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${badgeClass}">${expense.category}</span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-bold text-gray-900">${formatCurrency(expense.amount)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <div class="flex items-center justify-end gap-2 action-buttons">
+                            <!-- JS ile butonlar eklenecek -->
+                        </div>
+                    </td>
+                `;
+
+                // Aksiyon Butonları
+                const actionsDiv = row.querySelector('.action-buttons');
+                
+                // Görüntüle Butonu
+                const viewBtn = document.createElement('button');
+                viewBtn.innerHTML = `<i data-lucide="eye" class="w-4 h-4"></i>`;
+                viewBtn.className = "text-gray-400 hover:text-indigo-600 transition-colors p-1.5 rounded-md hover:bg-indigo-50";
+                viewBtn.onclick = () => openModal(expense);
+                actionsDiv.appendChild(viewBtn);
+
+                if (currentView === 'active') {
+                    // Düzenle
+                    const editBtn = document.createElement('button');
+                    editBtn.innerHTML = `<i data-lucide="pencil" class="w-4 h-4"></i>`;
+                    editBtn.className = `p-1.5 rounded-md transition-colors ${editingId === expense.id ? 'text-indigo-600 bg-indigo-100' : 'text-gray-400 hover:text-blue-600 hover:bg-blue-50'}`;
+                    editBtn.disabled = editingId === expense.id;
+                    editBtn.onclick = () => loadExpenseToForm(expense);
+                    actionsDiv.appendChild(editBtn);
+
+                    // Sil (Soft)
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.innerHTML = `<i data-lucide="trash-2" class="w-4 h-4"></i>`;
+                    deleteBtn.className = "text-gray-400 hover:text-red-500 transition-colors p-1.5 rounded-md hover:bg-red-50";
+                    deleteBtn.onclick = () => softDelete(expense.id);
+                    actionsDiv.appendChild(deleteBtn);
+                } else {
+                    // Geri Yükle
+                    const restoreBtn = document.createElement('button');
+                    restoreBtn.innerHTML = `<i data-lucide="rotate-ccw" class="w-4 h-4"></i>`;
+                    restoreBtn.className = "text-green-500 hover:text-green-700 transition-colors p-1.5 rounded-md hover:bg-green-50";
+                    restoreBtn.onclick = () => restoreExpense(expense.id);
+                    actionsDiv.appendChild(restoreBtn);
+
+                    // Kalıcı Sil
+                    const permBtn = document.createElement('button');
+                    permBtn.innerHTML = `<i data-lucide="trash-2" class="w-4 h-4"></i>`;
+                    permBtn.className = "text-red-500 hover:text-red-700 transition-colors p-1.5 rounded-md hover:bg-red-50";
+                    permBtn.onclick = () => permanentDelete(expense.id);
+                    actionsDiv.appendChild(permBtn);
+                }
+
+                expenseListBody.appendChild(row);
+            });
+        }
+
+        // --- FORM İŞLEMLERİ ---
+        function handleFileSelect(e) {
+            const file = e.target.files[0];
+            errorMsg.classList.add('hidden');
+            
+            if (file) {
+                if (file.size > 4 * 1024 * 1024) { // 4MB Limit
+                    showError('Dosya boyutu çok yüksek! Lütfen 4MB altındaki dosyaları yükleyiniz.');
+                    e.target.value = ""; 
+                    resetFileState();
+                    return;
+                }
+
+                fileName = file.name;
+                fileType = file.type;
+
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    fileData = reader.result;
+                    // UI Güncelle
+                    fileDisplayArea.innerHTML = `
+                        <div class="flex flex-col items-center justify-center text-green-600 gap-1">
+                            <i data-lucide="file-text" class="h-6 w-6"></i>
+                            <span class="text-sm font-medium truncate max-w-[200px]">${fileName}</span>
+                            <span class="text-xs text-gray-400">Yüklemeye hazır</span>
+                        </div>
+                    `;
+                    lucide.createIcons();
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        async function handleFormSubmit(e) {
+            e.preventDefault();
+            if (!currentUser) return;
+
+            setLoadingForm(true);
+
+            try {
+                const data = {
+                    expenseDate: document.getElementById('expense-date').value,
+                    receiptNo: document.getElementById('receipt-no').value,
+                    amount: parseFloat(document.getElementById('amount').value),
+                    category: document.getElementById('category').value,
+                    description: document.getElementById('description').value
+                };
+
+                const changes = []; // Log için
+
+                if (editingId) {
+                    // --- GÜNCELLEME ---
+                    const oldDoc = expenses.find(e => e.id === editingId);
+                    const updates = {};
+
+                    if (oldDoc.receiptNo !== data.receiptNo) { updates.receiptNo = data.receiptNo; changes.push(`Fiş No: ${oldDoc.receiptNo} -> ${data.receiptNo}`); }
+                    if (oldDoc.amount !== data.amount) { updates.amount = data.amount; changes.push(`Tutar: ${oldDoc.amount} -> ${data.amount}`); }
+                    if (oldDoc.category !== data.category) { updates.category = data.category; changes.push(`Kategori: ${oldDoc.category} -> ${data.category}`); }
+                    if (oldDoc.description !== data.description) { updates.description = data.description; changes.push(`Açıklama güncellendi.`); }
+                    if (oldDoc.expenseDate !== data.expenseDate) { updates.expenseDate = data.expenseDate; changes.push(`Tarih güncellendi.`); }
+
+                    if (fileData) {
+                        updates.fileName = fileName;
+                        updates.fileType = fileType;
+                        updates.hasFile = true;
+                        // Chunk upload
+                        await uploadFileChunks(editingId, fileData);
+                        changes.push(`Yeni dosya yüklendi: ${fileName}`);
+                    }
+
+                    if (Object.keys(updates).length > 0) {
+                        await updateDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'expenses', editingId), updates);
+                        await createLog(editingId, changes);
+                    }
+                } else {
+                    // --- YENİ KAYIT ---
+                    const newDoc = {
+                        ...data,
+                        fileName: fileName || 'Dosya Yok',
+                        fileType: fileType,
+                        hasFile: !!fileData,
+                        createdAt: Date.now(),
+                        isDeleted: false
+                    };
+
+                    const docRef = await addDoc(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'expenses'), newDoc);
+                    
+                    if (fileData) {
+                        await uploadFileChunks(docRef.id, fileData);
+                    }
+                }
+
+                resetForm();
+
+            } catch (err) {
+                console.error(err);
+                showError("İşlem sırasında hata oluştu.");
+            } finally {
+                setLoadingForm(false);
+            }
+        }
+
+        // --- YARDIMCI FONKSİYONLAR ---
+        async function uploadFileChunks(parentId, fullBase64) {
+            const CHUNK_SIZE = 800 * 1024;
+            const chunks = [];
+            for (let i = 0; i < fullBase64.length; i += CHUNK_SIZE) {
+                chunks.push(fullBase64.slice(i, i + CHUNK_SIZE));
+            }
+            const promises = chunks.map((chunkData, index) => {
+                return addDoc(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'expense_chunks'), {
+                    parentExpenseId: parentId,
+                    index: index,
+                    data: chunkData
+                });
+            });
+            await Promise.all(promises);
+        }
+
+        async function createLog(expenseId, changes) {
+            if (!changes || changes.length === 0) return;
+            await addDoc(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'logs'), {
+                expenseId, changes, timestamp: Date.now(), type: 'update'
+            });
+        }
+
+        // Formu Düzenleme Moduna Al
+        function loadExpenseToForm(expense) {
+            editingId = expense.id;
+            document.getElementById('expense-date').value = expense.expenseDate;
+            document.getElementById('receipt-no').value = expense.receiptNo;
+            document.getElementById('amount').value = expense.amount;
+            document.getElementById('category').value = expense.category;
+            document.getElementById('description').value = expense.description || '';
+            
+            // UI Güncelleme
+            formTitle.innerText = "Kayıt Düzenleniyor";
+            formTitle.className = "font-semibold text-indigo-900";
+            formCard.classList.add('border-indigo-300', 'ring-2', 'ring-indigo-100');
+            document.getElementById('form-header').classList.replace('bg-gray-50', 'bg-indigo-50');
+            btnSubmit.innerHTML = `<span>Değişiklikleri Kaydet</span>`;
+            btnSubmit.className = "w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors";
+            btnCancelEdit.classList.remove('hidden');
+            formIcon.classList.replace('text-gray-500', 'text-indigo-600');
+            formIcon.setAttribute('data-lucide', 'pencil');
+            
+            // Dosya kısmını sıfırla (Dosya değiştirme opsiyonel)
+            resetFileState();
+            document.getElementById('file-label').innerText = "Dosyayı Değiştir (Opsiyonel)";
+            
+            lucide.createIcons();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            renderList(); // Tabloyu yenile (highlight için)
+        }
+
+        function resetForm() {
+            editingId = null;
+            expenseForm.reset();
+            resetFileState();
+            document.getElementById('expense-date').value = new Date().toISOString().split('T')[0];
+            
+            // UI Eski Haline
+            formTitle.innerText = "Yeni Fiş Ekle";
+            formTitle.className = "font-semibold text-gray-900";
+            formCard.classList.remove('border-indigo-300', 'ring-2', 'ring-indigo-100');
+            document.getElementById('form-header').classList.replace('bg-indigo-50', 'bg-gray-50');
+            btnSubmit.innerHTML = `<span>Gideri Kaydet</span>`;
+            btnSubmit.className = "w-full bg-gray-900 hover:bg-gray-800 text-white py-2.5 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors";
+            btnCancelEdit.classList.add('hidden');
+            formIcon.classList.replace('text-indigo-600', 'text-gray-500');
+            formIcon.setAttribute('data-lucide', 'plus');
+            document.getElementById('file-label').innerText = "PDF / Görsel (Max 4MB)";
+            
+            lucide.createIcons();
+            renderList();
+        }
+
+        function resetFileState() {
+            fileName = '';
+            fileData = null;
+            fileType = '';
+            fileUploadInput.value = '';
+            fileDisplayArea.innerHTML = `
+                <i data-lucide="upload" class="mx-auto h-8 w-8 text-gray-400"></i>
+                <div class="flex text-sm text-gray-600 justify-center mt-2">
+                    <span class="font-medium text-indigo-600">Dosya Seç</span>
+                </div>
+                <p class="text-xs text-gray-400 mt-1">Yüksek boyutlu dosyalar otomatik parçalanır</p>
+            `;
+            lucide.createIcons();
+        }
+
+        // --- SİLME / GERİ YÜKLEME ---
+        async function softDelete(id) {
+            if (confirm('Bu kaydı çöp kutusuna taşımak istediğinize emin misiniz?')) {
+                await updateDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'expenses', id), { isDeleted: true });
+                await createLog(id, ['Kayıt çöp kutusuna taşındı.']);
+            }
+        }
+
+        async function restoreExpense(id) {
+            await updateDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'expenses', id), { isDeleted: false });
+            await createLog(id, ['Kayıt geri yüklendi.']);
+        }
+
+        async function permanentDelete(id) {
+            if (confirm('DİKKAT: Bu kayıt ve bağlı dosyalar kalıcı olarak silinecektir. Devam edilsin mi?')) {
+                await deleteDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'expenses', id));
+                // Chunkları da sil
+                const q = query(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'expense_chunks'), where('parentExpenseId', '==', id));
+                const snapshot = await getDocs(q);
+                const batch = writeBatch(db);
+                snapshot.docs.forEach(d => batch.delete(d.ref));
+                await batch.commit();
+            }
+        }
+
+        // --- MODAL İŞLEMLERİ ---
+        async function openModal(expense) {
+            // Modal İçeriğini Doldur
+            document.getElementById('modal-title').innerText = expense.receiptNo;
+            document.getElementById('modal-subtitle').innerText = `${expense.category} • ${expense.expenseDate || '-'}`;
+            document.getElementById('modal-desc').innerText = expense.description || 'Açıklama yok';
+            document.getElementById('modal-amount').innerText = formatCurrency(expense.amount);
+            
+            // Reset
+            currentDocData = null;
+            isZoomed = false;
+            btnDownload.classList.add('hidden');
+            viewFileContainer.innerHTML = '<div class="text-center text-gray-400"><div class="loader mx-auto mb-2"></div><p>Yükleniyor...</p></div>';
+            viewLogsContainer.innerHTML = '';
+            
+            // Tab'ı sıfırla
+            switchModalTab('file');
+            
+            // Modalı Göster
+            documentModal.classList.remove('hidden');
+            setTimeout(() => {
+                documentModal.classList.remove('opacity-0');
+                modalContent.classList.remove('scale-95');
+            }, 10);
+
+            // Dosya Getir
+            if (expense.hasFile || expense.fileData) {
+                try {
+                    let fullString = '';
+                    if (expense.fileData) {
+                        fullString = expense.fileData; // Eski veri
+                    } else {
+                        // Chunkları topla
+                        const q = query(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'expense_chunks'), where('parentExpenseId', '==', expense.id));
+                        const snapshot = await getDocs(q);
+                        const chunks = snapshot.docs.map(d => d.data());
+                        chunks.sort((a, b) => a.index - b.index);
+                        fullString = chunks.map(c => c.data).join('');
+                    }
+                    
+                    currentDocData = fullString;
+                    const isPdf = expense.fileType?.includes('pdf') || (expense.fileName && expense.fileName.toLowerCase().endsWith('.pdf'));
+                    
+                    if (isPdf) {
+                        viewFileContainer.innerHTML = `<iframe src="${fullString}" class="w-full h-full rounded-lg shadow-sm bg-white border-0"></iframe>`;
+                    } else {
+                        viewFileContainer.innerHTML = `
+                            <div class="relative w-full h-full flex items-center justify-center">
+                                <button onclick="toggleZoom()" class="absolute top-2 right-2 z-10 p-2 bg-white rounded-full shadow-lg hover:bg-gray-50 border border-gray-200">
+                                    <i data-lucide="zoom-in" id="zoom-icon" class="w-5 h-5 text-gray-700"></i>
+                                </button>
+                                <img id="doc-image" src="${fullString}" class="max-w-full max-h-full object-contain rounded-lg shadow-sm transition-all duration-300 cursor-zoom-in">
+                            </div>
+                        `;
+                        lucide.createIcons();
+                        // Zoom eventi için global fonksiyon
+                        window.toggleZoom = () => {
+                            const img = document.getElementById('doc-image');
+                            const icon = document.getElementById('zoom-icon');
+                            isZoomed = !isZoomed;
+                            if (isZoomed) {
+                                img.style.minWidth = '100%';
+                                img.className = "w-auto h-auto max-w-none cursor-zoom-out";
+                                viewFileContainer.classList.remove('items-center', 'justify-center');
+                                icon.setAttribute('data-lucide', 'zoom-out');
+                            } else {
+                                img.style.minWidth = '';
+                                img.className = "max-w-full max-h-full object-contain cursor-zoom-in transition-all duration-300";
+                                viewFileContainer.classList.add('items-center', 'justify-center');
+                                icon.setAttribute('data-lucide', 'zoom-in');
+                            }
+                            lucide.createIcons();
+                        };
+                        document.getElementById('doc-image').onclick = window.toggleZoom;
+                    }
+                    
+                    // İndirme Butonunu Hazırla (Global erişim için değişkene ata)
+                    window.currentDownloadName = expense.fileName || `belge-${expense.receiptNo}`;
+                    btnDownload.classList.remove('hidden');
+
+                } catch (error) {
+                    console.error(error);
+                    viewFileContainer.innerHTML = '<div class="text-center text-red-400"><p>Dosya yüklenirken hata oluştu.</p></div>';
+                }
+            } else {
+                viewFileContainer.innerHTML = `
+                    <div class="text-center text-gray-400">
+                        <i data-lucide="file-x" class="w-16 h-16 mx-auto mb-3 opacity-50"></i>
+                        <p>Bu kayda ait dosya bulunamadı.</p>
+                    </div>
+                `;
+                lucide.createIcons();
+            }
+
+            // Logları Getir (Async olarak arka planda)
+            fetchLogs(expense.id);
+        }
+
+        async function fetchLogs(expenseId) {
+            try {
+                const q = query(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'logs'), where('expenseId', '==', expenseId));
+                const snapshot = await getDocs(q);
+                const logs = snapshot.docs.map(d => d.data());
+                logs.sort((a, b) => b.timestamp - a.timestamp);
+
+                if (logs.length === 0) {
+                    viewLogsContainer.innerHTML = `
+                        <div class="text-center text-gray-500 py-12">
+                            <i data-lucide="history" class="w-12 h-12 mx-auto mb-3 opacity-30"></i>
+                            <p>Henüz bir değişiklik kaydı yok.</p>
+                        </div>
+                    `;
+                } else {
+                    viewLogsContainer.innerHTML = `<div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">` + 
+                    logs.map(log => `
+                        <div class="p-4 border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-xs font-semibold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-2 py-1 rounded">
+                                    ${log.type === 'update' ? 'Düzenleme' : 'İşlem'}
+                                </span>
+                                <span class="text-xs text-gray-400">${new Date(log.timestamp).toLocaleString('tr-TR')}</span>
+                            </div>
+                            <ul class="space-y-1">
+                                ${log.changes.map(c => `<li class="text-sm text-gray-700 flex items-start gap-2"><i data-lucide="arrow-right" class="w-4 h-4 text-gray-400 mt-0.5 shrink-0"></i>${c}</li>`).join('')}
+                            </ul>
+                        </div>
+                    `).join('') + `</div>`;
+                }
+                lucide.createIcons();
+            } catch (err) {
+                console.error(err);
+                viewLogsContainer.innerHTML = '<p class="text-center text-red-400">Loglar alınamadı.</p>';
+            }
+        }
+
+        function closeModal() {
+            documentModal.classList.add('opacity-0');
+            modalContent.classList.add('scale-95');
+            setTimeout(() => {
+                documentModal.classList.add('hidden');
+            }, 300);
+        }
+
+        function switchModalTab(tab) {
+            if (tab === 'file') {
+                viewFileContainer.parentElement.classList.remove('hidden'); // Parent div (body)
+                viewFileContainer.classList.remove('hidden');
+                viewLogsContainer.classList.add('hidden');
+                
+                tabFile.className = "flex-1 py-3 text-sm font-medium text-center transition-colors text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50/50";
+                tabLogs.className = "flex-1 py-3 text-sm font-medium text-center transition-colors text-gray-500 hover:text-gray-700 hover:bg-gray-50";
+            } else {
+                viewFileContainer.classList.add('hidden');
+                viewLogsContainer.classList.remove('hidden');
+
+                tabFile.className = "flex-1 py-3 text-sm font-medium text-center transition-colors text-gray-500 hover:text-gray-700 hover:bg-gray-50";
+                tabLogs.className = "flex-1 py-3 text-sm font-medium text-center transition-colors text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50/50";
+            }
+        }
+
+        function downloadFile() {
+            if (!currentDocData) return;
+            const link = document.createElement('a');
+            link.href = currentDocData;
+            link.download = window.currentDownloadName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // --- YARDIMCILAR ---
+        function formatCurrency(val) {
+            return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(val);
+        }
+
+        function setLoadingForm(isLoading) {
+            btnSubmit.disabled = isLoading;
+            if (isLoading) {
+                btnSubmit.innerHTML = `<div class="loader w-4 h-4 border-2 border-t-white mr-2"></div> İşleniyor...`;
+            } else {
+                btnSubmit.innerHTML = `<span>${editingId ? 'Değişiklikleri Kaydet' : 'Gideri Kaydet'}</span>`;
+            }
+        }
+
+        function showError(msg) {
+            errorMsg.querySelector('span').innerText = msg;
+            errorMsg.classList.remove('hidden');
+            setTimeout(() => errorMsg.classList.add('hidden'), 5000);
+        }
+
+    </script>
+</body>
+</html>
