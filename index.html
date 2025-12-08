@@ -1,0 +1,993 @@
+import React, { useState, useEffect, useMemo } from 'react';
+import { Trash2, FileText, Plus, Upload, TrendingUp, Receipt, PieChart, Wallet, Calendar, RotateCcw, Archive, Eye, X, AlertCircle, Loader2, Pencil, History, XCircle, ArrowRight, ZoomIn, ZoomOut, Download } from 'lucide-react';
+import { initializeApp } from 'firebase/app';
+import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from 'firebase/auth';
+import { 
+  getFirestore, 
+  collection, 
+  addDoc, 
+  deleteDoc, 
+  updateDoc, 
+  getDocs,
+  doc, 
+  onSnapshot,
+  query,
+  where,
+  writeBatch
+} from 'firebase/firestore';
+
+// --- FIREBASE AYARLARI ---
+// Senin gönderdiğin yapılandırma bilgileri buraya eklendi.
+const firebaseConfig = {
+  apiKey: "AIzaSyBYtnQ1E2SQTBx3TwlP56joVH6Ycjhkkas",
+  authDomain: "kasakontrol-294bc.firebaseapp.com",
+  projectId: "kasakontrol-294bc",
+  storageBucket: "kasakontrol-294bc.firebasestorage.app",
+  messagingSenderId: "1072559097960",
+  appId: "1:1072559097960:web:2f831c747408028b9b13dd",
+  measurementId: "G-D6PHMX93VQ"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+// App ID (Genelde sabit kalabilir veya kendi ID'nizi verebilirsiniz)
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
+export default function App() {
+  const [user, setUser] = useState(null);
+  const [expenses, setExpenses] = useState([]);
+  const [loading, setLoading] = useState(true);
+  
+  // View State
+  const [currentView, setCurrentView] = useState('active');
+  const [viewingDoc, setViewingDoc] = useState(null); 
+
+  // Form State
+  const [editingId, setEditingId] = useState(null); // Düzenlenen kaydın ID'si
+  const [receiptNo, setReceiptNo] = useState('');
+  const [amount, setAmount] = useState('');
+  const [category, setCategory] = useState('Ofis');
+  const [description, setDescription] = useState('');
+  const [expenseDate, setExpenseDate] = useState(new Date().toISOString().split('T')[0]);
+  
+  // File State
+  const [fileName, setFileName] = useState('');
+  const [fileData, setFileData] = useState(null); 
+  const [fileType, setFileType] = useState('');
+  
+  // UI State
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+
+  const categories = [
+    { id: 'ofis', label: 'Ofis Giderleri', color: 'bg-blue-100 text-blue-700' },
+    { id: 'yemek', label: 'Yemek & İkram', color: 'bg-orange-100 text-orange-700' },
+    { id: 'ulasim', label: 'Ulaşım & Yakıt', color: 'bg-green-100 text-green-700' },
+    { id: 'konaklama', label: 'Konaklama', color: 'bg-purple-100 text-purple-700' },
+    { id: 'personel', label: 'Personel', color: 'bg-pink-100 text-pink-700' },
+    { id: 'diger', label: 'Diğer', color: 'bg-gray-100 text-gray-700' },
+  ];
+
+  // 1. Authentication
+  useEffect(() => {
+    const initAuth = async () => {
+      try {
+        // Önce ortamın kendi token'ını deniyoruz (Platform kuralı gereği)
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+          await signInWithCustomToken(auth, __initial_auth_token);
+        } else {
+          // Token yoksa anonim giriş yap
+          await signInAnonymously(auth);
+        }
+      } catch (error) {
+        console.warn("Varsayılan giriş başarısız, anonim giriş deneniyor:", error);
+        // Eğer proje uyuşmazlığı (auth/custom-token-mismatch) olursa
+        // catch bloğuna düşer ve burada senin kendi projene Anonim giriş yapar.
+        try {
+          await signInAnonymously(auth);
+        } catch (anonError) {
+          console.error("Anonim giriş hatası:", anonError);
+          setErrorMsg("Giriş yapılamadı. Lütfen Firebase Console'dan Anonim girişi açtığınızdan emin olun.");
+        }
+      }
+    };
+    initAuth();
+    
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // 2. Firestore Data Listener
+  useEffect(() => {
+    if (!user) return;
+
+    const q = query(
+      collection(db, 'artifacts', appId, 'users', user.uid, 'expenses')
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const expenseList = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      
+      expenseList.sort((a, b) => {
+        const dateA = a.expenseDate ? new Date(a.expenseDate) : new Date(a.createdAt);
+        const dateB = b.expenseDate ? new Date(b.expenseDate) : new Date(b.createdAt);
+        return dateB - dateA;
+      });
+      
+      setExpenses(expenseList);
+      setLoading(false);
+    }, (error) => {
+      console.error("Data fetch error:", error);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [user]);
+
+  // Handle File Selection
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    setErrorMsg('');
+    
+    if (file) {
+      if (file.size > 4 * 1024 * 1024) {
+        setErrorMsg('Dosya boyutu çok yüksek! Lütfen 4MB altındaki dosyaları yükleyiniz.');
+        e.target.value = ""; 
+        setFileName('');
+        setFileData(null);
+        return;
+      }
+
+      setFileName(file.name);
+      setFileType(file.type);
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFileData(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Helper: Chunk Data and Upload
+  const uploadFileChunks = async (parentId, fullBase64) => {
+    const CHUNK_SIZE = 800 * 1024; 
+    const chunks = [];
+    
+    for (let i = 0; i < fullBase64.length; i += CHUNK_SIZE) {
+      chunks.push(fullBase64.slice(i, i + CHUNK_SIZE));
+    }
+
+    const promises = chunks.map((chunkData, index) => {
+      return addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'expense_chunks'), {
+        parentExpenseId: parentId,
+        index: index,
+        data: chunkData
+      });
+    });
+
+    await Promise.all(promises);
+  };
+
+  // Helper: Create Log Entry
+  const createLog = async (expenseId, changes) => {
+    if (!changes || changes.length === 0) return;
+    
+    await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'logs'), {
+      expenseId,
+      changes,
+      timestamp: Date.now(),
+      type: 'update'
+    });
+  };
+
+  // Start Editing
+  const handleEditClick = (expense) => {
+    setEditingId(expense.id);
+    setReceiptNo(expense.receiptNo);
+    setAmount(expense.amount);
+    setCategory(expense.category);
+    setDescription(expense.description || '');
+    setExpenseDate(expense.expenseDate);
+    // Not: Dosya düzenleme opsiyoneldir, mevcut dosya korunur, yeni dosya seçilirse değişir.
+    setFileName(''); 
+    setFileData(null);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Cancel Editing
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setReceiptNo('');
+    setAmount('');
+    setDescription('');
+    setCategory('Ofis');
+    setFileName('');
+    setFileData(null);
+    setExpenseDate(new Date().toISOString().split('T')[0]);
+    const fileInput = document.getElementById('file-upload');
+    if (fileInput) fileInput.value = "";
+  };
+
+  // Add or Update Expense
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!user || !amount || !receiptNo || !expenseDate) return;
+
+    setIsSubmitting(true);
+    try {
+      
+      if (editingId) {
+        // --- UPDATE LOGIC ---
+        const oldDoc = expenses.find(e => e.id === editingId);
+        const updates = {};
+        const changes = [];
+
+        // Değişiklikleri Kontrol Et
+        if (oldDoc.receiptNo !== receiptNo) {
+          updates.receiptNo = receiptNo;
+          changes.push(`Fiş No: ${oldDoc.receiptNo} -> ${receiptNo}`);
+        }
+        if (parseFloat(oldDoc.amount) !== parseFloat(amount)) {
+          updates.amount = parseFloat(amount);
+          changes.push(`Tutar: ${formatCurrency(oldDoc.amount)} -> ${formatCurrency(amount)}`);
+        }
+        if (oldDoc.category !== category) {
+          updates.category = category;
+          changes.push(`Kategori: ${oldDoc.category} -> ${category}`);
+        }
+        if (oldDoc.description !== description) {
+          updates.description = description;
+          changes.push(`Açıklama güncellendi.`);
+        }
+        if (oldDoc.expenseDate !== expenseDate) {
+          updates.expenseDate = expenseDate;
+          changes.push(`Tarih: ${oldDoc.expenseDate} -> ${expenseDate}`);
+        }
+
+        // Dosya değiştiyse
+        if (fileData) {
+          updates.fileName = fileName;
+          updates.fileType = fileType;
+          updates.hasFile = true;
+          // Eski parçaları silmek gerekebilir ama karmaşıklık olmasın diye sadece yeni parçaları ekliyoruz.
+          // Gerçek bir app'te eski chunk'ları silmek gerekir.
+          await uploadFileChunks(editingId, fileData);
+          changes.push(`Yeni dosya yüklendi: ${fileName}`);
+        }
+
+        if (Object.keys(updates).length > 0) {
+          await updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'expenses', editingId), updates);
+          await createLog(editingId, changes);
+        }
+
+        handleCancelEdit(); // Reset form
+
+      } else {
+        // --- CREATE LOGIC ---
+        const docRef = await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'expenses'), {
+          receiptNo,
+          amount: parseFloat(amount),
+          category,
+          description,
+          expenseDate,
+          fileName: fileName || 'Dosya Yok',
+          fileType: fileType,
+          hasFile: !!fileData,
+          createdAt: Date.now(),
+          isDeleted: false,
+        });
+
+        if (fileData) {
+          await uploadFileChunks(docRef.id, fileData);
+        }
+        
+        // İlk oluşturma logu (Opsiyonel)
+        // await createLog(docRef.id, ['Kayıt oluşturuldu']);
+
+        // Reset Form
+        setReceiptNo('');
+        setAmount('');
+        setDescription('');
+        setFileName('');
+        setFileData(null);
+        setFileType('');
+        setExpenseDate(new Date().toISOString().split('T')[0]);
+        document.getElementById('file-upload').value = ""; 
+      }
+
+    } catch (error) {
+      console.error("İşlem hatası:", error);
+      setErrorMsg("İşlem sırasında bir hata oluştu.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Soft Delete
+  const handleSoftDelete = async (id) => {
+    if (!user) return;
+    if (window.confirm('Bu kaydı çöp kutusuna taşımak istediğinize emin misiniz?')) {
+      try {
+        await updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'expenses', id), { isDeleted: true });
+        await createLog(id, ['Kayıt çöp kutusuna taşındı.']);
+      } catch (error) { console.error(error); }
+    }
+  };
+
+  // Restore
+  const handleRestore = async (id) => {
+    if (!user) return;
+    try {
+      await updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'expenses', id), { isDeleted: false });
+      await createLog(id, ['Kayıt geri yüklendi.']);
+    } catch (error) { console.error(error); }
+  };
+
+  // Permanent Delete
+  const handlePermanentDelete = async (id) => {
+    if (!user) return;
+    if (window.confirm('DİKKAT: Bu kayıt ve bağlı dosyalar kalıcı olarak silinecektir. Devam edilsin mi?')) {
+      try {
+        await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'expenses', id));
+        // Not: Loglar ana kayıt silindiği için "sahipsiz" kalır, genelde bu kabul edilir veya loglar da silinir.
+        
+        const q = query(
+          collection(db, 'artifacts', appId, 'users', user.uid, 'expense_chunks'),
+          where('parentExpenseId', '==', id)
+        );
+        const snapshot = await getDocs(q);
+        const batch = writeBatch(db);
+        snapshot.docs.forEach((chunkDoc) => {
+          batch.delete(chunkDoc.ref);
+        });
+        await batch.commit();
+
+      } catch (error) { console.error(error); }
+    }
+  };
+
+  // --- Calculations & Filters ---
+  const filteredExpenses = useMemo(() => {
+    return expenses.filter(item => {
+      if (currentView === 'active') return !item.isDeleted;
+      else return item.isDeleted;
+    });
+  }, [expenses, currentView]);
+
+  const activeExpenses = expenses.filter(item => !item.isDeleted);
+  
+  const totalAmount = useMemo(() => activeExpenses.reduce((sum, item) => sum + (item.amount || 0), 0), [activeExpenses]);
+
+  const categoryCounts = useMemo(() => {
+    const counts = {};
+    activeExpenses.forEach(item => {
+      counts[item.category] = (counts[item.category] || 0) + (item.amount || 0);
+    });
+    return counts;
+  }, [activeExpenses]);
+
+  const formatCurrency = (val) => new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(val);
+  const formatDate = (dateString) => dateString ? new Date(dateString).toLocaleDateString('tr-TR') : '-';
+
+  // --- MODAL COMPONENT (Reassembles Chunks) ---
+  const DocumentModal = ({ doc, onClose }) => {
+    const [docData, setDocData] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [activeTab, setActiveTab] = useState('file'); // 'file' or 'logs'
+    const [logs, setLogs] = useState([]);
+    const [logsLoading, setLogsLoading] = useState(false);
+    const [isZoomed, setIsZoomed] = useState(false);
+
+    // Dosya Getirme
+    useEffect(() => {
+      const fetchFile = async () => {
+        if (!doc.hasFile) {
+          setIsLoading(false);
+          return;
+        }
+        try {
+          if (doc.fileData) {
+            setDocData(doc.fileData);
+            setIsLoading(false);
+            return;
+          }
+          const q = query(
+            collection(db, 'artifacts', appId, 'users', user.uid, 'expense_chunks'),
+            where('parentExpenseId', '==', doc.id)
+          );
+          const snapshot = await getDocs(q);
+          const chunks = snapshot.docs.map(d => d.data());
+          chunks.sort((a, b) => a.index - b.index);
+          const fullString = chunks.map(c => c.data).join('');
+          setDocData(fullString);
+        } catch (err) {
+          console.error("Dosya getirme hatası:", err);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      fetchFile();
+    }, [doc]);
+
+    // Logları Getirme
+    useEffect(() => {
+      if (activeTab === 'logs') {
+        setLogsLoading(true);
+        const fetchLogs = async () => {
+          try {
+            const q = query(
+              collection(db, 'artifacts', appId, 'users', user.uid, 'logs'),
+              where('expenseId', '==', doc.id)
+            );
+            const snapshot = await getDocs(q);
+            const logsData = snapshot.docs.map(d => d.data());
+            
+            // Client-side sorting (Yeniden eskiye)
+            logsData.sort((a, b) => b.timestamp - a.timestamp);
+            
+            setLogs(logsData);
+          } catch (error) {
+            console.error("Log getirme hatası:", error);
+          } finally {
+            setLogsLoading(false);
+          }
+        };
+        fetchLogs();
+      }
+    }, [activeTab, doc]);
+
+    // İndirme Fonksiyonu
+    const handleDownload = () => {
+      if (!docData) return;
+      const link = document.createElement('a');
+      link.href = docData;
+      link.download = doc.fileName || `belge-${doc.receiptNo}`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    };
+
+    if (!doc) return null;
+    const isPdf = doc.fileType?.includes('pdf') || doc.fileName?.toLowerCase().endsWith('.pdf');
+
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+        <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl h-[85vh] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
+          
+          {/* Header */}
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gray-50">
+            <div>
+              <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                {doc.receiptNo}
+                {doc.isDeleted && <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full">Silindi</span>}
+              </h3>
+              <p className="text-sm text-gray-500">{doc.category} • {formatDate(doc.expenseDate)}</p>
+            </div>
+            <button onClick={onClose} className="p-2 hover:bg-gray-200 rounded-full transition-colors">
+              <X className="w-6 h-6 text-gray-600" />
+            </button>
+          </div>
+
+          {/* Tabs */}
+          <div className="flex border-b border-gray-200">
+            <button
+              onClick={() => setActiveTab('file')}
+              className={`flex-1 py-3 text-sm font-medium text-center transition-colors ${
+                activeTab === 'file' ? 'text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50/50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              <div className="flex items-center justify-center gap-2">
+                <FileText className="w-4 h-4" />
+                Dosya Görüntüle
+              </div>
+            </button>
+            <button
+              onClick={() => setActiveTab('logs')}
+              className={`flex-1 py-3 text-sm font-medium text-center transition-colors ${
+                activeTab === 'logs' ? 'text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50/50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              <div className="flex items-center justify-center gap-2">
+                <History className="w-4 h-4" />
+                İşlem Geçmişi (Loglar)
+              </div>
+            </button>
+          </div>
+
+          {/* Content */}
+          <div className={`flex-1 bg-gray-100 p-4 overflow-auto relative ${isZoomed && activeTab === 'file' ? '' : 'flex items-center justify-center'}`}>
+            
+            {activeTab === 'file' && (
+              <div className="w-full h-full flex items-center justify-center relative">
+                {isLoading ? (
+                  <div className="flex flex-col items-center gap-3 text-indigo-600">
+                    <Loader2 className="w-10 h-10 animate-spin" />
+                    <span className="font-medium">Dosya hazırlanıyor...</span>
+                  </div>
+                ) : docData ? (
+                  isPdf ? (
+                    <iframe src={docData} className="w-full h-full rounded-lg shadow-sm bg-white" title="PDF Viewer" />
+                  ) : (
+                    <>
+                      {/* Zoom Butonu (Sadece Resimler için) */}
+                      <div className="absolute top-2 right-2 z-10">
+                         <button
+                           onClick={(e) => { e.stopPropagation(); setIsZoomed(!isZoomed); }}
+                           className="p-2 bg-white rounded-full shadow-lg hover:bg-gray-50 text-gray-700 transition-all border border-gray-200"
+                           title={isZoomed ? "Küçült" : "Büyüt"}
+                         >
+                           {isZoomed ? <ZoomOut className="w-5 h-5" /> : <ZoomIn className="w-5 h-5" />}
+                         </button>
+                      </div>
+                      
+                      <img 
+                        src={docData} 
+                        alt="Fiş Görseli" 
+                        onClick={() => setIsZoomed(!isZoomed)}
+                        className={`transition-all duration-200 rounded-lg shadow-sm ${
+                           isZoomed 
+                           ? 'w-auto h-auto max-w-none cursor-zoom-out' 
+                           : 'max-w-full max-h-full object-contain cursor-zoom-in' 
+                        }`}
+                        style={isZoomed ? { minWidth: '100%' } : {}}
+                      />
+                    </>
+                  )
+                ) : (
+                  <div className="text-center text-gray-400">
+                    <FileText className="w-16 h-16 mx-auto mb-3 opacity-50" />
+                    <p>Dosya verisi bulunamadı.</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'logs' && (
+              <div className="max-w-2xl mx-auto space-y-4 w-full h-full overflow-y-auto">
+                {logsLoading ? (
+                   <div className="flex justify-center p-8"><Loader2 className="w-8 h-8 animate-spin text-gray-400" /></div>
+                ) : logs.length === 0 ? (
+                  <div className="text-center text-gray-500 py-12">
+                    <History className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                    <p>Henüz bir değişiklik kaydı yok.</p>
+                  </div>
+                ) : (
+                  <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                    {logs.map((log, idx) => (
+                      <div key={idx} className="p-4 border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs font-semibold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-2 py-1 rounded">
+                            {log.type === 'update' ? 'Düzenleme' : 'İşlem'}
+                          </span>
+                          <span className="text-xs text-gray-400">
+                            {new Date(log.timestamp).toLocaleString('tr-TR')}
+                          </span>
+                        </div>
+                        <ul className="space-y-1">
+                          {log.changes.map((change, cIdx) => (
+                            <li key={cIdx} className="text-sm text-gray-700 flex items-start gap-2">
+                              <ArrowRight className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
+                              {change}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Footer */}
+          <div className="px-6 py-4 border-t border-gray-200 bg-white flex justify-between items-center">
+             <div className="text-sm text-gray-500 max-w-[50%] truncate">
+                {doc.description || "Açıklama yok"}
+             </div>
+             <div className="flex items-center gap-4">
+                {/* İndirme Butonu */}
+                {docData && (
+                  <button
+                    onClick={handleDownload}
+                    className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors shadow-sm"
+                    title="Dosyayı İndir"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span className="hidden sm:inline">İndir</span>
+                  </button>
+                )}
+                
+                <div className="text-xl font-bold text-gray-900 border-l pl-4 border-gray-200">
+                    {formatCurrency(doc.amount)}
+                </div>
+             </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  if (loading) return (
+    <div className="flex items-center justify-center h-screen bg-gray-50 text-gray-500">
+      <Loader2 className="w-8 h-8 animate-spin mr-2" /> Yükleniyor...
+    </div>
+  );
+
+  return (
+    <div className="min-h-screen bg-gray-50 font-sans text-gray-800">
+      
+      {/* Modal */}
+      {viewingDoc && <DocumentModal doc={viewingDoc} onClose={() => setViewingDoc(null)} />}
+
+      {/* Header */}
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="bg-indigo-600 p-2 rounded-lg">
+              <Receipt className="w-5 h-5 text-white" />
+            </div>
+            <h1 className="text-xl font-bold text-gray-900 tracking-tight">Şirket Gider Yönetimi</h1>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="flex bg-gray-100 rounded-lg p-1">
+              <button
+                onClick={() => setCurrentView('active')}
+                className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${
+                  currentView === 'active' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Giderler
+              </button>
+              <button
+                onClick={() => setCurrentView('trash')}
+                className={`px-3 py-1.5 text-sm font-medium rounded-md flex items-center gap-1 transition-all ${
+                  currentView === 'trash' ? 'bg-white text-red-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                Çöp Kutusu
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        {/* İstatistikler */}
+        {currentView === 'active' && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex items-start justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-500 mb-1">Toplam Gider</p>
+                <h2 className="text-3xl font-bold text-gray-900">{formatCurrency(totalAmount)}</h2>
+              </div>
+              <div className="p-3 bg-red-50 rounded-full">
+                <TrendingUp className="w-6 h-6 text-red-600" />
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex items-start justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-500 mb-1">İşlenen Fiş</p>
+                <h2 className="text-3xl font-bold text-gray-900">{activeExpenses.length} <span className="text-base font-normal text-gray-400">Adet</span></h2>
+              </div>
+              <div className="p-3 bg-indigo-50 rounded-full">
+                <FileText className="w-6 h-6 text-indigo-600" />
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex items-start justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-500 mb-1">En Çok Harcama</p>
+                <h2 className="text-lg font-bold text-gray-900 truncate">
+                  {Object.keys(categoryCounts).length > 0 
+                    ? Object.entries(categoryCounts).sort((a,b) => b[1] - a[1])[0][0] 
+                    : '-'}
+                </h2>
+              </div>
+              <div className="p-3 bg-orange-50 rounded-full">
+                <PieChart className="w-6 h-6 text-orange-600" />
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          
+          {/* Form */}
+          {currentView === 'active' ? (
+            <div className="lg:col-span-1">
+              <div className={`bg-white rounded-xl shadow-sm border overflow-hidden sticky top-24 transition-colors ${editingId ? 'border-indigo-300 ring-2 ring-indigo-100' : 'border-gray-200'}`}>
+                <div className={`px-6 py-4 border-b flex items-center justify-between ${editingId ? 'bg-indigo-50 border-indigo-200' : 'bg-gray-50 border-gray-200'}`}>
+                  <div className="flex items-center gap-2">
+                    {editingId ? <Pencil className="w-5 h-5 text-indigo-600" /> : <Plus className="w-5 h-5 text-gray-500" />}
+                    <h3 className={`font-semibold ${editingId ? 'text-indigo-900' : 'text-gray-900'}`}>
+                      {editingId ? 'Kayıt Düzenleniyor' : 'Yeni Fiş Ekle'}
+                    </h3>
+                  </div>
+                  {editingId && (
+                    <button onClick={handleCancelEdit} className="text-xs text-red-600 hover:text-red-800 font-medium flex items-center gap-1">
+                      <XCircle className="w-4 h-4" /> İptal Et
+                    </button>
+                  )}
+                </div>
+                
+                <form onSubmit={handleSubmit} className="p-6 space-y-4">
+                  {errorMsg && (
+                    <div className="p-3 bg-red-50 text-red-700 text-sm rounded-lg flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4" />
+                      {errorMsg}
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Fiş Tarihi</label>
+                    <input
+                      type="date"
+                      required
+                      value={expenseDate}
+                      onChange={(e) => setExpenseDate(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Fiş No</label>
+                    <input
+                      type="text"
+                      required
+                      value={receiptNo}
+                      onChange={(e) => setReceiptNo(e.target.value)}
+                      placeholder="Örn: TR-2024-001"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Tutar (TL)</label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-2 text-gray-400">₺</span>
+                      <input
+                        type="number"
+                        required
+                        step="0.01"
+                        value={amount}
+                        onChange={(e) => setAmount(e.target.value)}
+                        placeholder="0.00"
+                        className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Gider Kalemi</label>
+                    <select
+                      value={category}
+                      onChange={(e) => setCategory(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-white outline-none"
+                    >
+                      {categories.map(cat => (
+                        <option key={cat.id} value={cat.label}>{cat.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Açıklama</label>
+                    <input
+                      type="text"
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      placeholder="Opsiyonel"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                    />
+                  </div>
+                  
+                  {/* Dosya Yükleme */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      {editingId ? 'Dosyayı Değiştir (Opsiyonel)' : 'PDF / Görsel (Max 4MB)'}
+                    </label>
+                    <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-indigo-500 transition-colors bg-gray-50 hover:bg-white cursor-pointer relative">
+                      <input 
+                        id="file-upload" 
+                        name="file-upload" 
+                        type="file" 
+                        accept=".pdf, .jpg, .png, .jpeg"
+                        onChange={handleFileChange}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      />
+                      <div className="space-y-1 text-center pointer-events-none">
+                        {fileName ? (
+                          <div className="flex flex-col items-center justify-center text-green-600 gap-1">
+                            <FileText className="h-6 w-6" />
+                            <span className="text-sm font-medium truncate max-w-[200px]">{fileName}</span>
+                            <span className="text-xs text-gray-400">Yüklemeye hazır</span>
+                          </div>
+                        ) : (
+                          <>
+                            <Upload className="mx-auto h-8 w-8 text-gray-400" />
+                            <div className="flex text-sm text-gray-600 justify-center mt-2">
+                              <span className="font-medium text-indigo-600">Dosya Seç</span>
+                            </div>
+                            <p className="text-xs text-gray-400 mt-1">Yüksek boyutlu dosyalar otomatik parçalanır</p>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className={`w-full text-white py-2.5 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors ${
+                      editingId 
+                        ? 'bg-indigo-600 hover:bg-indigo-700' 
+                        : 'bg-gray-900 hover:bg-gray-800'
+                    }`}
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        İşleniyor...
+                      </>
+                    ) : (
+                      editingId ? 'Değişiklikleri Kaydet' : 'Gideri Kaydet'
+                    )}
+                  </button>
+                </form>
+              </div>
+            </div>
+          ) : (
+            <div className="lg:col-span-1">
+              <div className="bg-red-50 border border-red-100 rounded-xl p-6">
+                <div className="flex items-center gap-3 mb-2">
+                  <Trash2 className="w-6 h-6 text-red-600" />
+                  <h3 className="font-bold text-red-900">Çöp Kutusu</h3>
+                </div>
+                <p className="text-sm text-red-700">Buradaki kayıtlar silinmek üzere işaretlenmiştir.</p>
+              </div>
+            </div>
+          )}
+
+          {/* Liste */}
+          <div className="lg:col-span-2 space-y-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-gray-900 text-lg">
+                {currentView === 'active' ? 'Son İşlemler' : 'Silinmiş Kayıtlar'}
+              </h3>
+            </div>
+
+            {filteredExpenses.length === 0 ? (
+              <div className="bg-white rounded-xl p-12 text-center border border-dashed border-gray-300">
+                <div className="bg-gray-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                  {currentView === 'active' ? <Wallet className="w-8 h-8 text-gray-400" /> : <Archive className="w-8 h-8 text-gray-400" />}
+                </div>
+                <h3 className="text-lg font-medium text-gray-900">Kayıt Bulunamadı</h3>
+                <p className="text-gray-500 mt-1">
+                  {currentView === 'active' ? 'Yeni bir harcama ekleyin.' : 'Çöp kutusu boş.'}
+                </p>
+              </div>
+            ) : (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tarih</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fiş Detayı</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kategori</th>
+                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Tutar</th>
+                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">İşlem</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {filteredExpenses.map((expense) => {
+                        const categoryStyle = categories.find(c => c.label === expense.category)?.color || 'bg-gray-100 text-gray-800';
+                        const displayDate = expense.expenseDate ? formatDate(expense.expenseDate) : formatDate(expense.createdAt);
+                        const hasFile = expense.hasFile || !!expense.fileData; 
+                        
+                        return (
+                          <tr key={expense.id} className={`hover:bg-gray-50 transition-colors ${editingId === expense.id ? 'bg-indigo-50/50' : ''}`}>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              <div className="flex flex-col">
+                                <span className="font-medium text-gray-700">{displayDate}</span>
+                                {hasFile ? (
+                                  <span className="flex items-center gap-1 text-xs text-indigo-600 mt-1">
+                                    <FileText className="w-3 h-3" />
+                                    <span className="truncate max-w-[80px]">Dosya Eklı</span>
+                                  </span>
+                                ) : (
+                                  <span className="text-xs text-gray-400 mt-1">Dosya Yok</span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="text-sm font-medium text-gray-900">{expense.receiptNo}</div>
+                              {expense.description && (
+                                <div className="text-xs text-gray-500 truncate max-w-[150px]">{expense.description}</div>
+                              )}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${categoryStyle}`}>
+                                {expense.category}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-bold text-gray-900">
+                              {formatCurrency(expense.amount)}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                              <div className="flex items-center justify-end gap-2">
+                                {/* Görüntüle */}
+                                <button
+                                  onClick={() => setViewingDoc(expense)}
+                                  title="Görüntüle ve Geçmiş"
+                                  className="text-gray-400 hover:text-indigo-600 transition-colors p-1.5 rounded-md hover:bg-indigo-50"
+                                >
+                                  <Eye className="w-4 h-4" />
+                                </button>
+
+                                {currentView === 'active' ? (
+                                  <>
+                                    {/* Düzenle */}
+                                    <button
+                                      onClick={() => handleEditClick(expense)}
+                                      title="Düzenle"
+                                      disabled={editingId === expense.id}
+                                      className={`p-1.5 rounded-md transition-colors ${
+                                        editingId === expense.id 
+                                          ? 'text-indigo-600 bg-indigo-100' 
+                                          : 'text-gray-400 hover:text-blue-600 hover:bg-blue-50'
+                                      }`}
+                                    >
+                                      <Pencil className="w-4 h-4" />
+                                    </button>
+                                    {/* Sil */}
+                                    <button 
+                                      onClick={() => handleSoftDelete(expense.id)}
+                                      title="Çöp Kutusuna Taşı"
+                                      className="text-gray-400 hover:text-red-500 transition-colors p-1.5 rounded-md hover:bg-red-50"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </button>
+                                  </>
+                                ) : (
+                                  <>
+                                    <button 
+                                      onClick={() => handleRestore(expense.id)}
+                                      title="Geri Yükle"
+                                      className="text-green-500 hover:text-green-700 transition-colors p-1.5 rounded-md hover:bg-green-50"
+                                    >
+                                      <RotateCcw className="w-4 h-4" />
+                                    </button>
+                                    <button 
+                                      onClick={() => handlePermanentDelete(expense.id)}
+                                      title="Kalıcı Olarak Sil"
+                                      className="text-red-500 hover:text-red-700 transition-colors p-1.5 rounded-md hover:bg-red-50"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </button>
+                                  </>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </div>
+
+        </div>
+      </main>
+    </div>
+  );
+}
