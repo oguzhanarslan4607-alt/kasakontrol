@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Güvenli Şirket Gider Takip Sistemi</title>
+    <title>Zafer Admin - Pro Gider Takip</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -36,18 +36,10 @@
         ::-webkit-scrollbar-track { background: #f1f1f1; }
         ::-webkit-scrollbar-thumb { background: #c7c7c7; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #a0a0a0; }
-        
         .dark ::-webkit-scrollbar-track { background: #1f2937; }
         .dark ::-webkit-scrollbar-thumb { background: #4b5563; }
-
-        .loader {
-            border: 3px solid #f3f3f3; border-radius: 50%;
-            border-top: 3px solid #4f46e5;
-            width: 20px; height: 20px;
-            animation: spin 1s linear infinite;
-        }
+        .loader { border: 3px solid #f3f3f3; border-radius: 50%; border-top: 3px solid #4f46e5; width: 20px; height: 20px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        
         .calendar-day { transition: all 0.2s; min-height: 80px; display: flex; flex-direction: column; padding: 4px; border: 1px solid #e5e7eb; }
         .dark .calendar-day { border-color: #374151; }
         .calendar-day:hover { background-color: #f9fafb; }
@@ -56,7 +48,6 @@
         .dark .calendar-day.selected { background-color: #312e81; border-color: #6366f1; }
         .calendar-day.today { background-color: #fff7ed; font-weight: bold; }
         .dark .calendar-day.today { background-color: #431407; }
-        
         .has-expense-indicator { margin-top: auto; width: 100%; display: flex; gap: 2px; flex-wrap: wrap; justify-content: center; }
         .dot { width: 6px; height: 6px; border-radius: 50%; background-color: #4f46e5; }
     </style>
@@ -67,28 +58,24 @@
         <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md p-8 border border-gray-200 dark:border-gray-700">
             <div class="text-center mb-8">
                 <div class="bg-indigo-600 w-16 h-16 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg transform -rotate-6">
-                    <i data-lucide="shield-check" class="w-8 h-8 text-white"></i>
+                    <i data-lucide="lock" class="w-8 h-8 text-white"></i>
                 </div>
-                <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Güvenli Gider Takip</h2>
-                <p class="text-gray-500 dark:text-gray-400 mt-2">Kişisel Hesabınıza Giriş Yapın</p>
+                <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Gider Takip Sistemi</h2>
+                <p class="text-gray-500 dark:text-gray-400 mt-2">Yönetici Girişi</p>
             </div>
-
             <form id="auth-form" class="space-y-4">
                 <div id="auth-error" class="hidden p-3 bg-red-50 text-red-700 text-sm rounded-lg"></div>
-                
                 <div>
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">E-posta Adresi</label>
-                    <input type="email" id="auth-email" required class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all" placeholder="ornek@sirket.com">
+                    <input type="email" id="auth-email" required class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all" placeholder="">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Şifre</label>
-                    <input type="password" id="auth-password" required class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all" placeholder="••••••••">
+                    <input type="password" id="auth-password" required class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all" placeholder="">
                 </div>
-
                 <button type="submit" id="btn-login" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-lg font-bold transition-colors shadow-md flex justify-center items-center">
-                    <span>Giriş Yap / Kayıt Ol</span>
+                    <span>Giriş Yap</span>
                 </button>
-                <p class="text-xs text-center text-gray-400 mt-2">Hesabınız yoksa otomatik oluşturulacaktır.</p>
             </form>
         </div>
     </div>
@@ -130,7 +117,7 @@
         <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div id="page-loader" class="fixed inset-0 bg-white dark:bg-gray-900 z-40 flex flex-col items-center justify-center hidden">
                 <div class="loader w-10 h-10 border-4 border-t-indigo-600 mb-4"></div>
-                <p class="text-gray-500 dark:text-gray-400">Verileriniz Güvenle Yükleniyor...</p>
+                <p class="text-gray-500 dark:text-gray-400">Veriler Yükleniyor...</p>
             </div>
 
             <div id="main-view" class="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -157,7 +144,7 @@
                                     <input type="text" id="description" placeholder="Opsiyonel" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
                                 </div>
                                 <div>
-                                    <label id="file-label" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">PDF / Görsel (OCR Destekli)</label>
+                                    <label id="file-label" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">PDF / Görsel (Storage)</label>
                                     <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 dark:border-gray-600 border-dashed rounded-lg hover:border-indigo-500 dark:hover:border-indigo-400 transition-colors bg-gray-50 dark:bg-gray-900 hover:bg-white dark:hover:bg-gray-800 cursor-pointer relative group">
                                         <input id="file-upload" type="file" accept=".pdf, .jpg, .png, .jpeg" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
                                         <div class="space-y-1 text-center pointer-events-none" id="file-display-area">
@@ -165,7 +152,7 @@
                                             <div class="flex text-sm text-gray-600 dark:text-gray-400 justify-center mt-2">
                                                 <span class="font-medium text-indigo-600 dark:text-indigo-400 group-hover:text-indigo-500">Dosya Seç</span>
                                             </div>
-                                            <p class="text-xs text-gray-400">PNG, JPG, PDF (Max 4MB)</p>
+                                            <p class="text-xs text-gray-400">PNG, JPG, PDF (Max 5MB)</p>
                                         </div>
                                     </div>
                                     <button type="button" id="btn-ocr" onclick="runOCR()" class="mt-2 w-full text-xs flex items-center justify-center gap-1 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 py-1.5 rounded border border-indigo-200 dark:border-indigo-800 disabled:opacity-50" disabled>
@@ -191,12 +178,18 @@
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Gider Kalemi</label>
                                     <select id="category" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
-                                        <option value="Ofis">Ofis Giderleri</option>
-                                        <option value="Yemek">Yemek & İkram</option>
-                                        <option value="Ulaşım">Ulaşım & Yakıt</option>
-                                        <option value="Konaklama">Konaklama</option>
-                                        <option value="Personel">Personel</option>
-                                        <option value="Diğer">Diğer</option>
+                                        <option value="Kırtasiye ve Ofis Malzemeleri">Kırtasiye ve Ofis Malzemeleri</option>
+                                        <option value="Teknolojik Donanım ve Yazılım">Teknolojik Donanım ve Yazılım</option>
+                                        <option value="Ofis Mobilyası ve Donanımları">Ofis Mobilyası ve Donanımları</option>
+                                        <option value="Mutfak ve İkram Giderleri">Mutfak ve İkram Giderleri</option>
+                                        <option value="Temizlik ve Hijyen Giderleri">Temizlik ve Hijyen Giderleri</option>
+                                        <option value="Enerji ve İletişim Giderleri">Enerji ve İletişim Giderleri</option>
+                                        <option value="Kira ve Bağlantılı Giderler">Kira ve Bağlantılı Giderler</option>
+                                        <option value="Ulaşım ve Lojistik Giderleri">Ulaşım ve Lojistik Giderleri</option>
+                                        <option value="Depo ve Saklama Giderleri">Depo ve Saklama Giderleri</option>
+                                        <option value="Personel ile İlgili Ofis Giderleri">Personel ile İlgili Ofis Giderleri</option>
+                                        <option value="Güvenlik ve Sigorta Giderleri">Güvenlik ve Sigorta Giderleri</option>
+                                        <option value="Resmî ve Hukuki Giderler">Resmî ve Hukuki Giderler</option>
                                     </select>
                                 </div>
                                 <div class="flex items-center gap-2">
@@ -362,35 +355,59 @@
         </div>
     </div>
 
+    <div id="delete-modal" class="fixed inset-0 z-[60] hidden flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm transition-opacity duration-300 opacity-0">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-sm overflow-hidden transform transition-all scale-95" id="delete-modal-content">
+            <div class="p-6 text-center">
+                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 dark:bg-red-900/30 mb-4">
+                    <i data-lucide="alert-triangle" class="w-6 h-6 text-red-600 dark:text-red-400"></i>
+                </div>
+                <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">Bu kaydı silmek istiyor musun?</h3>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Bu işlem geri alınamayabilir.</p>
+            </div>
+            <div class="px-6 py-4 bg-gray-50 dark:bg-gray-700/50 flex gap-3">
+                <button onclick="closeDeleteModal()" class="flex-1 px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                    Hayır
+                </button>
+                <button onclick="confirmDeleteAction()" class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors shadow-sm">
+                    Evet
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, deleteDoc, updateDoc, getDocs, doc, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
+        // GİRİŞE İZİN VERİLEN TEK E-POSTA ADRESİ
+        const ALLOWED_EMAIL = "zafer@admin.com";
+
+        // !!! BURAYA KENDİ FIREBASE PROJE AYARLARINIZI YAPIŞTIRIN !!!
         const firebaseConfig = {
-            apiKey: "AIzaSyBYtnQ1E2SQTBx3TwlP56joVH6Ycjhkkas",
-            authDomain: "kasakontrol-294bc.firebaseapp.com",
-            projectId: "kasakontrol-294bc",
-            storageBucket: "kasakontrol-294bc.firebasestorage.app",
-            messagingSenderId: "1072559097960",
-            appId: "1:1072559097960:web:2f831c747408028b9b13dd",
-            measurementId: "G-D6PHMX93VQ"
+            apiKey: "AIzaSyBYtnQ1E2SQTBx3TwlP56joVH6Ycjhkkas", 
+            authDomain: "kasakontrol-294bc.firebaseapp.com", 
+            projectId: "kasakontrol-294bc", 
+            storageBucket: "kasakontrol-294bc.firebasestorage.app", 
+            messagingSenderId: "1072559097960", 
+            appId: "1:1072559097960:web:2f831c747408028b9b13dd", 
+            measurementId: "G-D6PHMX93VQ" 
         };
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
+        const storage = getStorage(app);
         const appId = 'default-app-id';
 
         let currentUser = null;
         let expenses = [];
         let currentView = 'active'; 
         let editingId = null;
-        let fileData = null;
+        let fileObj = null;
         let fileName = '';
-        let fileType = '';
-        let isZoomed = false;
-        let currentDocData = null;
+        let currentDocData = null; 
         let reportPeriod = 'daily';
         let currentCalendarDate = new Date();
         let selectedDate = null;
@@ -398,17 +415,29 @@
         let filterStartDate = '';
         let filterEndDate = '';
 
+        // Delete Modal State
+        let pendingDeleteId = null;
+        let pendingDeleteType = null;
+
         let chartInstance1 = null;
         let chartInstance2 = null;
 
-        // --- GÜVENLİK YARDIMCI FONKSİYONLARI ---
+        // YEREL TARİH FORMATI (BUGÜN)
+        function getLocalDateString() {
+            const d = new Date();
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
         const getUserDataPath = (collectionName) => {
             if (!currentUser) return null;
-            return collection(db, 'artifacts', appId, 'users', currentUser.uid, 'data', collectionName);
+            return collection(db, 'artifacts', appId, 'users', currentUser.uid, collectionName);
         };
         const getUserDocPath = (collectionName, docId) => {
             if (!currentUser) return null;
-            return doc(db, 'artifacts', appId, 'users', currentUser.uid, 'data', collectionName, docId);
+            return doc(db, 'artifacts', appId, 'users', currentUser.uid, collectionName, docId);
         }
 
         // --- GLOBAL UI FUNCTIONS ---
@@ -443,13 +472,36 @@
             reportPeriod = period;
             renderReports(); 
         };
-        window.changeCalendarMonth = (offset) => {
-            currentCalendarDate.setMonth(currentCalendarDate.getMonth() + offset);
-            renderCalendarView();
-        };
-
+        window.changeCalendarMonth = (offset) => { currentCalendarDate.setMonth(currentCalendarDate.getMonth() + offset); renderCalendarView(); };
         window.exportExcel = exportExcel;
         window.runOCR = runOCR;
+
+        // Delete Modal Functions
+        window.closeDeleteModal = () => {
+            const m = document.getElementById('delete-modal');
+            m.classList.add('opacity-0');
+            document.getElementById('delete-modal-content').classList.add('scale-95');
+            setTimeout(() => {
+                m.classList.add('hidden');
+                pendingDeleteId = null;
+                pendingDeleteType = null;
+            }, 300);
+        };
+
+        window.confirmDeleteAction = async () => {
+            if (!pendingDeleteId) return;
+            window.closeDeleteModal();
+            try {
+                if (pendingDeleteType === 'soft') {
+                    await updateDoc(getUserDocPath('expenses', pendingDeleteId), { isDeleted: true });
+                } else if (pendingDeleteType === 'permanent') {
+                    await deleteDoc(getUserDocPath('expenses', pendingDeleteId));
+                }
+            } catch (err) {
+                console.error("Silme hatası:", err);
+                alert("Silme işleminde hata oluştu.");
+            }
+        };
 
         window.onload = () => {
             lucide.createIcons();
@@ -471,11 +523,10 @@
             });
 
             setupEventListeners();
-            document.getElementById('expense-date').value = new Date().toISOString().split('T')[0];
+            document.getElementById('expense-date').value = getLocalDateString();
         };
 
         function setupEventListeners() {
-            // Auth
             const authForm = document.getElementById('auth-form');
             const authError = document.getElementById('auth-error');
 
@@ -485,13 +536,17 @@
                 const pass = document.getElementById('auth-password').value;
                 authError.classList.add('hidden');
 
+                if(email !== ALLOWED_EMAIL) {
+                    authError.innerText = "Bu e-posta adresi ile giriş yapma yetkiniz bulunmamaktadır.";
+                    authError.classList.remove('hidden');
+                    return;
+                }
+
                 signInWithEmailAndPassword(auth, email, pass).catch(err => {
                     if(err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
-                         createUserWithEmailAndPassword(auth, email, pass).then(() => {
-                            alert("Yeni hesap oluşturuldu ve giriş yapıldı.");
-                         }).catch(createErr => {
-                            authError.innerText = "Kayıt Hatası: " + createErr.message;
-                            authError.classList.remove('hidden');
+                        createUserWithEmailAndPassword(auth, email, pass).catch(e => {
+                           authError.innerText = "Giriş Hatası: " + e.message;
+                           authError.classList.remove('hidden');
                         });
                     } else {
                         authError.innerText = "Giriş Hatası: " + err.message;
@@ -500,24 +555,20 @@
                 });
             });
 
-            // Nav
             document.getElementById('btn-view-active').addEventListener('click', () => changeView('active'));
             document.getElementById('btn-view-trash').addEventListener('click', () => changeView('trash'));
             document.getElementById('btn-view-reports').addEventListener('click', () => changeView('reports'));
             document.getElementById('btn-view-calendar').addEventListener('click', () => changeView('calendar'));
             
-            // Filter
             document.getElementById('search-input').addEventListener('input', (e) => { searchQuery = e.target.value.toLowerCase(); renderList(); });
             document.getElementById('filter-start-date').addEventListener('change', (e) => { filterStartDate = e.target.value; renderList(); toggleClearFilterBtn(); });
             document.getElementById('filter-end-date').addEventListener('change', (e) => { filterEndDate = e.target.value; renderList(); toggleClearFilterBtn(); });
             document.getElementById('btn-clear-filter').addEventListener('click', clearFilters);
 
-            // Form
             document.getElementById('file-upload').addEventListener('change', handleFileSelect);
             document.getElementById('expense-form').addEventListener('submit', handleFormSubmit);
             document.getElementById('btn-cancel-edit').addEventListener('click', resetForm);
 
-            // Modal
             document.getElementById('btn-close-modal').addEventListener('click', closeModal);
             document.getElementById('tab-file').addEventListener('click', () => switchModalTab('file'));
             document.getElementById('tab-logs').addEventListener('click', () => switchModalTab('logs'));
@@ -525,11 +576,9 @@
             document.getElementById('document-modal').addEventListener('click', (e) => { if(e.target === document.getElementById('document-modal')) closeModal(); });
         }
 
-        // --- DATA ---
         function startDataListener() {
             if(!currentUser) return;
             const q = query(getUserDataPath('expenses'));
-
             onSnapshot(q, (snapshot) => {
                 const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 list.sort((a, b) => {
@@ -538,149 +587,160 @@
                     return dateB - dateA;
                 });
                 expenses = list;
-                
                 if(currentView === 'reports') renderReports();
                 else if(currentView === 'calendar') renderCalendarView();
                 else renderList();
-                
                 document.getElementById('page-loader').classList.add('hidden');
             });
         }
 
-        // --- VIEW LOGIC ---
         function changeView(view) {
             currentView = view;
-            const btnActive = document.getElementById('btn-view-active');
-            const btnTrash = document.getElementById('btn-view-trash');
-            const btnReports = document.getElementById('btn-view-reports');
-            const btnCalendar = document.getElementById('btn-view-calendar');
-            const mainView = document.getElementById('main-view');
-            const reportsView = document.getElementById('reports-view');
-            const calendarView = document.getElementById('calendar-view');
-            const searchPanel = document.getElementById('search-panel');
+            const views = ['active', 'trash', 'reports', 'calendar'];
+            
+            document.getElementById('main-view').classList.add('hidden');
+            document.getElementById('reports-view').classList.add('hidden');
+            document.getElementById('calendar-view').classList.add('hidden');
+            document.getElementById('search-panel').classList.add('hidden');
+            document.getElementById('trash-info-left').classList.add('hidden');
+            document.getElementById('trash-info-right').classList.add('hidden');
+            document.getElementById('form-section').classList.add('hidden');
 
-            const inactiveClass = "px-3 py-1.5 text-sm font-medium rounded-md transition-all text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white flex items-center gap-1";
-            btnActive.className = inactiveClass;
-            btnTrash.className = inactiveClass;
-            btnReports.className = inactiveClass;
-            btnCalendar.className = inactiveClass;
+            views.forEach(v => document.getElementById(`btn-view-${v}`).className = "px-3 py-1.5 text-sm font-medium rounded-md transition-all text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white flex items-center gap-1");
 
-            mainView.classList.add('hidden');
-            reportsView.classList.add('hidden');
-            calendarView.classList.add('hidden');
-            searchPanel.classList.add('hidden');
+            const activeBtnClass = "px-3 py-1.5 text-sm font-medium rounded-md transition-all bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm flex items-center gap-1";
+            document.getElementById(`btn-view-${view}`).className = activeBtnClass;
 
-            if (view === 'active') {
-                btnActive.className = "px-3 py-1.5 text-sm font-medium rounded-md transition-all bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm flex items-center gap-1";
-                mainView.classList.remove('hidden');
-                searchPanel.classList.remove('hidden');
+            if(view === 'active') {
+                document.getElementById('main-view').classList.remove('hidden');
+                document.getElementById('search-panel').classList.remove('hidden');
                 document.getElementById('form-section').classList.remove('hidden');
-                document.getElementById('trash-info-left').classList.add('hidden');
-                document.getElementById('trash-info-right').classList.add('hidden');
                 document.getElementById('list-title').innerText = "İşlemler";
                 renderList();
-            } else if (view === 'trash') {
-                btnTrash.className = "px-3 py-1.5 text-sm font-medium rounded-md flex items-center gap-1 transition-all bg-white dark:bg-gray-600 text-red-600 dark:text-red-400 shadow-sm";
-                mainView.classList.remove('hidden');
-                searchPanel.classList.remove('hidden');
-                document.getElementById('form-section').classList.add('hidden');
+            } else if(view === 'trash') {
+                document.getElementById('main-view').classList.remove('hidden');
+                document.getElementById('search-panel').classList.remove('hidden');
                 document.getElementById('trash-info-left').classList.remove('hidden');
                 document.getElementById('trash-info-right').classList.remove('hidden');
                 document.getElementById('list-title').innerText = "Silinmiş Kayıtlar";
                 renderList();
-            } else if (view === 'reports') {
-                btnReports.className = "px-3 py-1.5 text-sm font-medium rounded-md transition-all bg-white dark:bg-gray-600 text-indigo-600 dark:text-indigo-400 shadow-sm flex items-center gap-1";
-                reportsView.classList.remove('hidden');
+            } else if(view === 'reports') {
+                document.getElementById('reports-view').classList.remove('hidden');
                 renderReports();
-            } else if (view === 'calendar') {
-                btnCalendar.className = "px-3 py-1.5 text-sm font-medium rounded-md transition-all bg-white dark:bg-gray-600 text-indigo-600 dark:text-indigo-400 shadow-sm flex items-center gap-1";
-                calendarView.classList.remove('hidden');
+            } else if(view === 'calendar') {
+                document.getElementById('calendar-view').classList.remove('hidden');
                 renderCalendarView();
             }
         }
 
-        // --- LIST RENDER ---
-        function renderList() {
-            let filtered = expenses.filter(item => currentView === 'active' ? !item.isDeleted : item.isDeleted);
-            if (searchQuery) {
-                filtered = filtered.filter(item => 
-                    (item.receiptNo && item.receiptNo.toLowerCase().includes(searchQuery)) ||
-                    (item.description && item.description.toLowerCase().includes(searchQuery)) ||
-                    (item.category && item.category.toLowerCase().includes(searchQuery))
-                );
-            }
-            if (filterStartDate) filtered = filtered.filter(item => item.expenseDate >= filterStartDate);
-            if (filterEndDate) filtered = filtered.filter(item => item.expenseDate <= filterEndDate);
-
-            const tbody = document.getElementById('expense-list-body');
-            const empty = document.getElementById('empty-state');
-            const table = document.getElementById('table-container');
-
-            if (filtered.length === 0) {
-                empty.classList.remove('hidden');
-                table.classList.add('hidden');
-            } else {
-                empty.classList.add('hidden');
-                table.classList.remove('hidden');
-                tbody.innerHTML = '';
-
-                filtered.forEach(expense => {
-                    const date = expense.expenseDate ? new Date(expense.expenseDate).toLocaleDateString('tr-TR') : '-';
-                    const hasFile = expense.hasFile || !!expense.fileData;
-                    
-                    const colors = {'Ofis':'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300','Yemek':'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300','Ulaşım':'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300','Konaklama':'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300','Personel':'bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-300','Diğer':'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'};
-                    const catColor = colors[expense.category] || 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
-
-                    const tr = document.createElement('tr');
-                    tr.className = `hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors ${editingId === expense.id ? 'bg-indigo-50/50 dark:bg-indigo-900/20' : ''}`;
-                    
-                    let btns = `<button onclick="window.openModal('${expense.id}')" class="p-1.5 rounded-md text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-colors"><i data-lucide="eye" class="w-4 h-4"></i></button>`;
-                    if (currentView === 'active') {
-                        const editClass = editingId === expense.id ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-100 dark:bg-indigo-900/40' : 'text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30';
-                        btns += `<button onclick="window.loadExpenseToForm('${expense.id}')" class="p-1.5 rounded-md transition-colors ${editClass}" ${editingId === expense.id ? 'disabled' : ''}><i data-lucide="pencil" class="w-4 h-4"></i></button>
-                                 <button onclick="window.softDelete('${expense.id}')" class="p-1.5 rounded-md text-gray-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"><i data-lucide="trash-2" class="w-4 h-4"></i></button>`;
-                    } else {
-                        btns += `<button onclick="window.restoreExpense('${expense.id}')" class="p-1.5 rounded-md text-green-500 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 hover:bg-green-50 dark:hover:bg-green-900/30 transition-colors"><i data-lucide="rotate-ccw" class="w-4 h-4"></i></button>
-                                 <button onclick="window.permanentDelete('${expense.id}')" class="p-1.5 rounded-md text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"><i data-lucide="trash-2" class="w-4 h-4"></i></button>`;
-                    }
-
-                    tr.innerHTML = `
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                            <div class="flex flex-col"><span class="font-medium text-gray-700 dark:text-gray-300">${date}</span>${hasFile ? `<span class="flex items-center gap-1 text-xs text-indigo-600 dark:text-indigo-400 mt-1"><i data-lucide="file-text" class="w-3 h-3"></i><span class="truncate max-w-[80px]">Dosya</span></span>` : ``}</div>
-                        </td>
-                        <td class="px-6 py-4"><div class="text-sm font-medium text-gray-900 dark:text-white">${expense.receiptNo}</div><div class="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[150px]">${expense.description || ''}</div></td>
-                        <td class="px-6 py-4 whitespace-nowrap"><span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${catColor}">${expense.category}</span></td>
-                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-bold text-gray-900 dark:text-white">${formatCurrency(expense.amount)}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"><div class="flex items-center justify-end gap-2">${btns}</div></td>
-                    `;
-                    tbody.appendChild(tr);
-                });
+        function handleFileSelect(e) {
+            const file = e.target.files[0];
+            const btnOcr = document.getElementById('btn-ocr');
+            const fileDisplay = document.getElementById('file-display-area');
+            if (file) {
+                if (file.size > 5 * 1024 * 1024) { alert('Maksimum 5MB!'); e.target.value = ""; return; }
+                fileObj = file;
+                fileName = file.name;
+                fileDisplay.innerHTML = `<div class="flex flex-col items-center justify-center text-green-600 gap-1"><i data-lucide="file-text" class="h-6 w-6"></i><span class="text-sm font-medium truncate max-w-[200px]">${fileName}</span></div>`;
+                btnOcr.disabled = false;
                 lucide.createIcons();
             }
         }
 
-        window.openModal = (id) => { const e = expenses.find(x => x.id === id); if(e) openModal(e); };
-        window.loadExpenseToForm = (id) => { const e = expenses.find(x => x.id === id); if(e) loadExpenseToForm(e); };
-        window.softDelete = softDelete;
-        window.restoreExpense = restoreExpense;
-        window.permanentDelete = permanentDelete;
+        async function uploadFileToStorage(file) {
+            const storageRef = ref(storage, `users/${currentUser.uid}/expenses/${Date.now()}_${file.name}`);
+            const snapshot = await uploadBytes(storageRef, file);
+            return await getDownloadURL(snapshot.ref);
+        }
 
-        // --- REPORTS ---
+        async function handleFormSubmit(e) {
+            e.preventDefault();
+            if (!currentUser) return;
+            const btnSubmit = document.getElementById('btn-submit');
+            btnSubmit.disabled = true; btnSubmit.innerText = "İşleniyor...";
+            try {
+                const data = {
+                    expenseDate: document.getElementById('expense-date').value,
+                    receiptNo: document.getElementById('receipt-no').value,
+                    amount: parseFloat(document.getElementById('amount').value) || 0, // Fixed NaN
+                    category: document.getElementById('category').value,
+                    description: document.getElementById('description').value,
+                    isRecurring: document.getElementById('is-recurring').checked
+                };
+                
+                let fileUrl = null;
+                if(fileObj) {
+                    fileUrl = await uploadFileToStorage(fileObj);
+                }
+
+                if (editingId) {
+                    const oldDoc = expenses.find(e => e.id === editingId);
+                    const updates = {};
+                    const changes = [];
+                    if(oldDoc.amount !== data.amount) { updates.amount = data.amount; changes.push("Tutar güncellendi"); }
+                    updates.expenseDate = data.expenseDate;
+                    updates.receiptNo = data.receiptNo;
+                    updates.category = data.category;
+                    updates.description = data.description;
+                    updates.isRecurring = data.isRecurring;
+                    
+                    if (fileUrl) {
+                        updates.fileUrl = fileUrl;
+                        updates.fileName = fileName;
+                        updates.hasFile = true;
+                        changes.push("Dosya güncellendi");
+                    }
+                    await updateDoc(getUserDocPath('expenses', editingId), updates);
+                    await createLog(editingId, changes);
+                } else {
+                    const newDoc = { 
+                        ...data, 
+                        fileUrl: fileUrl, 
+                        fileName: fileName || '', 
+                        hasFile: !!fileUrl, 
+                        createdAt: Date.now(), 
+                        isDeleted: false 
+                    };
+                    const docRef = await addDoc(getUserDataPath('expenses'), newDoc);
+                }
+                resetForm();
+            } catch (err) { console.error(err); alert("Hata oluştu: " + err.message); } 
+            finally { btnSubmit.disabled = false; btnSubmit.innerHTML = `<span>${editingId?'Değişiklikleri Kaydet':'Gideri Kaydet'}</span>`; }
+        }
+
+        async function createLog(expenseId, changes) {
+            if (!changes.length) return;
+            await addDoc(getUserDataPath('logs'), { expenseId, changes, timestamp: Date.now(), type: 'update' });
+        }
+
+        function resetForm() {
+            editingId = null;
+            document.getElementById('expense-form').reset();
+            document.getElementById('expense-date').value = getLocalDateString();
+            fileObj = null; fileName = '';
+            document.getElementById('btn-ocr').disabled = true;
+            document.getElementById('file-display-area').innerHTML = `<i data-lucide="upload" class="mx-auto h-8 w-8 text-gray-400"></i><div class="flex text-sm text-gray-600 dark:text-gray-400 justify-center mt-2"><span class="font-medium text-indigo-600 dark:text-indigo-400">Dosya Seç</span></div>`;
+            document.getElementById('btn-cancel-edit').classList.add('hidden');
+            document.getElementById('form-title').innerText = "Yeni Fiş Ekle";
+            document.getElementById('btn-submit').innerHTML = `<span>Gideri Kaydet</span>`;
+            lucide.createIcons();
+        }
+
         function renderReports() {
             const activeList = expenses.filter(e => !e.isDeleted);
             let filteredList = [];
-            const today = new Date();
+            const todayStr = getLocalDateString(); 
             let labelText = "";
+
             if (reportPeriod === 'daily') {
-                const todayStr = today.toISOString().split('T')[0];
                 filteredList = activeList.filter(e => e.expenseDate === todayStr);
                 labelText = "Bugünkü";
             } else if (reportPeriod === 'monthly') {
-                const currentMonth = today.toISOString().slice(0, 7);
+                const currentMonth = todayStr.slice(0, 7); 
                 filteredList = activeList.filter(e => e.expenseDate && e.expenseDate.startsWith(currentMonth));
                 labelText = "Bu Ayki";
             } else if (reportPeriod === 'yearly') {
-                const currentYear = today.getFullYear().toString();
+                const currentYear = todayStr.slice(0, 4); 
                 filteredList = activeList.filter(e => e.expenseDate && e.expenseDate.startsWith(currentYear));
                 labelText = "Bu Yılki";
             }
@@ -692,10 +752,10 @@
                 else btn.className = "px-4 py-2 text-sm font-medium rounded-lg transition-colors text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700";
             });
 
-            const total = filteredList.reduce((sum, item) => sum + (item.amount || 0), 0);
+            const total = filteredList.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
             const count = filteredList.length;
             const catCounts = {};
-            filteredList.forEach(item => { catCounts[item.category] = (catCounts[item.category] || 0) + (item.amount || 0); });
+            filteredList.forEach(item => { catCounts[item.category] = (catCounts[item.category] || 0) + (Number(item.amount) || 0); });
             const topCategory = Object.keys(catCounts).length > 0 ? Object.entries(catCounts).sort((a,b) => b[1] - a[1])[0][0] : '-';
 
             document.getElementById('stat-period-label').innerText = `${labelText} Toplam Gider`;
@@ -711,7 +771,8 @@
             const textColor = isDark ? '#e5e7eb' : '#374151';
             
             const catCounts = {};
-            data.forEach(item => { catCounts[item.category] = (catCounts[item.category] || 0) + item.amount; });
+            data.forEach(item => { catCounts[item.category] = (catCounts[item.category] || 0) + (Number(item.amount) || 0); });
+            
             const ctxCat = document.getElementById('chart-categories');
             if(ctxCat) {
                 if(chartInstance1) chartInstance1.destroy();
@@ -719,7 +780,10 @@
                     type: 'pie',
                     data: {
                         labels: Object.keys(catCounts),
-                        datasets: [{ data: Object.values(catCounts), backgroundColor: ['#3b82f6','#f97316','#22c55e','#a855f7','#ec4899','#6b7280'], borderWidth: 1 }]
+                        datasets: [{ data: Object.values(catCounts), backgroundColor: [
+                            '#3b82f6', '#6366f1', '#64748b', '#f97316', '#06b6d4', '#eab308', 
+                            '#ef4444', '#22c55e', '#d97706', '#ec4899', '#6b7280', '#a855f7'
+                        ], borderWidth: 1 }]
                     },
                     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: textColor } } } }
                 });
@@ -727,7 +791,11 @@
 
             const dateCounts = {};
             data.sort((a,b) => a.expenseDate.localeCompare(b.expenseDate));
-            data.forEach(item => { const d = item.expenseDate||'Tarihsiz'; dateCounts[d] = (dateCounts[d]||0) + item.amount; });
+            data.forEach(item => { 
+                const d = item.expenseDate||'Tarihsiz'; 
+                dateCounts[d] = (dateCounts[d]||0) + (Number(item.amount) || 0); 
+            });
+            
             const ctxTrend = document.getElementById('chart-trend');
             if(ctxTrend) {
                 if(chartInstance2) chartInstance2.destroy();
@@ -742,7 +810,7 @@
             }
         }
 
-        // --- CALENDAR ---
+        // CALENDAR
         function renderCalendarView() {
             const calendarGrid = document.getElementById('calendar-grid');
             if(!calendarGrid) return;
@@ -750,14 +818,17 @@
             
             const year = currentCalendarDate.getFullYear();
             const month = currentCalendarDate.getMonth();
-            const todayStr = new Date().toISOString().split('T')[0];
+            const todayStr = getLocalDateString();
             const monthNames = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
             document.getElementById('calendar-month-label').innerHTML = `<i data-lucide="calendar" class="w-5 h-5 text-indigo-600 dark:text-indigo-400"></i> ${monthNames[month]} ${year}`;
 
             const firstDay = new Date(year, month, 1);
             const lastDay = new Date(year, month + 1, 0);
-            let startDayIndex = firstDay.getDay(); if (startDayIndex === 0) startDayIndex = 7;
-            startDayIndex -= 1;
+            
+            // Monday start fix
+            let startDayIndex = firstDay.getDay(); 
+            if (startDayIndex === 0) startDayIndex = 6; 
+            else startDayIndex -= 1;
 
             const activeExpenses = expenses.filter(e => !e.isDeleted);
 
@@ -772,7 +843,11 @@
                 if(dayStr === todayStr) className += " today";
                 if(selectedDate === dayStr) className += " selected";
                 dayDiv.className = className;
-                dayDiv.onclick = () => { selectedDate = dayStr; renderCalendarView(); };
+                dayDiv.onclick = () => { 
+                    selectedDate = dayStr; 
+                    renderCalendarView(); 
+                    renderSelectedDateDetails();
+                };
 
                 let dotsHtml = '';
                 if(hasExpense) {
@@ -808,7 +883,20 @@
             } else {
                 let html = '';
                 dailyList.forEach(ex => {
-                    const colors = {'Ofis':'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300','Yemek':'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300','Ulaşım':'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300','Konaklama':'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300','Personel':'bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-300','Diğer':'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'};
+                     const colors = {
+                        'Kırtasiye ve Ofis Malzemeleri': 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
+                        'Teknolojik Donanım ve Yazılım': 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300',
+                        'Ofis Mobilyası ve Donanımları': 'bg-slate-100 text-slate-700 dark:bg-slate-900/40 dark:text-slate-300',
+                        'Mutfak ve İkram Giderleri': 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300',
+                        'Temizlik ve Hijyen Giderleri': 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-300',
+                        'Enerji ve İletişim Giderleri': 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300',
+                        'Kira ve Bağlantılı Giderler': 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',
+                        'Ulaşım ve Lojistik Giderleri': 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300',
+                        'Depo ve Saklama Giderleri': 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
+                        'Personel ile İlgili Ofis Giderleri': 'bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-300',
+                        'Güvenlik ve Sigorta Giderleri': 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300',
+                        'Resmî ve Hukuki Giderler': 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300'
+                    };
                     const catColor = colors[ex.category] || 'bg-gray-100';
                     html += `
                         <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-100 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer" onclick="window.openModal('${ex.id}')">
@@ -831,117 +919,80 @@
             lucide.createIcons();
         }
 
-        // --- FORM HANDLING ---
-        function handleFileSelect(e) {
-            const file = e.target.files[0];
-            const btnOcr = document.getElementById('btn-ocr');
-            const fileDisplay = document.getElementById('file-display-area');
-            if (file) {
-                if (file.size > 4 * 1024 * 1024) { alert('Maksimum 4MB!'); e.target.value = ""; return; }
-                fileName = file.name;
-                fileType = file.type;
-                const reader = new FileReader();
-                reader.onloadend = () => {
-                    fileData = reader.result;
-                    fileDisplay.innerHTML = `<div class="flex flex-col items-center justify-center text-green-600 gap-1"><i data-lucide="file-text" class="h-6 w-6"></i><span class="text-sm font-medium truncate max-w-[200px]">${fileName}</span></div>`;
-                    btnOcr.disabled = false;
-                    lucide.createIcons();
-                };
-                reader.readAsDataURL(file);
+        // Render List logic
+        function renderList() {
+            let filtered = expenses.filter(item => currentView === 'active' ? !item.isDeleted : item.isDeleted);
+            if (searchQuery) filtered = filtered.filter(item => (item.receiptNo && item.receiptNo.toLowerCase().includes(searchQuery)) || (item.category && item.category.toLowerCase().includes(searchQuery)));
+            if (filterStartDate) filtered = filtered.filter(item => item.expenseDate >= filterStartDate);
+            if (filterEndDate) filtered = filtered.filter(item => item.expenseDate <= filterEndDate);
+
+            const tbody = document.getElementById('expense-list-body');
+            const empty = document.getElementById('empty-state');
+            const table = document.getElementById('table-container');
+
+            if (filtered.length === 0) { empty.classList.remove('hidden'); table.classList.add('hidden'); } 
+            else {
+                empty.classList.add('hidden'); table.classList.remove('hidden');
+                tbody.innerHTML = '';
+                filtered.forEach(expense => {
+                    const date = expense.expenseDate ? new Date(expense.expenseDate).toLocaleDateString('tr-TR') : '-';
+                    const hasFile = expense.hasFile;
+                    // Colors map
+                    const colors = {
+                        'Kırtasiye ve Ofis Malzemeleri': 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
+                        'Teknolojik Donanım ve Yazılım': 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300',
+                        'Ofis Mobilyası ve Donanımları': 'bg-slate-100 text-slate-700 dark:bg-slate-900/40 dark:text-slate-300',
+                        'Mutfak ve İkram Giderleri': 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300',
+                        'Temizlik ve Hijyen Giderleri': 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-300',
+                        'Enerji ve İletişim Giderleri': 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300',
+                        'Kira ve Bağlantılı Giderler': 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',
+                        'Ulaşım ve Lojistik Giderleri': 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300',
+                        'Depo ve Saklama Giderleri': 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
+                        'Personel ile İlgili Ofis Giderleri': 'bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-300',
+                        'Güvenlik ve Sigorta Giderleri': 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300',
+                        'Resmî ve Hukuki Giderler': 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300'
+                    };
+                    const catColor = colors[expense.category] || 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+                    const tr = document.createElement('tr');
+                    tr.className = `hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors ${editingId === expense.id ? 'bg-indigo-50/50 dark:bg-indigo-900/20' : ''}`;
+                    let btns = `<button onclick="window.openModal('${expense.id}')" class="p-1.5 rounded-md text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-colors"><i data-lucide="eye" class="w-4 h-4"></i></button>`;
+                    if (currentView === 'active') {
+                        btns += `<button onclick="window.loadExpenseToForm('${expense.id}')" class="p-1.5 rounded-md transition-colors text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30"><i data-lucide="pencil" class="w-4 h-4"></i></button><button onclick="window.softDelete('${expense.id}')" class="p-1.5 rounded-md text-gray-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"><i data-lucide="trash-2" class="w-4 h-4"></i></button>`;
+                    } else {
+                        btns += `<button onclick="window.restoreExpense('${expense.id}')" class="p-1.5 rounded-md text-green-500 dark:text-green-400 hover:text-green-700"><i data-lucide="rotate-ccw" class="w-4 h-4"></i></button><button onclick="window.permanentDelete('${expense.id}')" class="p-1.5 rounded-md text-red-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button>`;
+                    }
+                    tr.innerHTML = `<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400"><div class="flex flex-col"><span class="font-medium text-gray-700 dark:text-gray-300">${date}</span>${hasFile ? `<span class="flex items-center gap-1 text-xs text-indigo-600 dark:text-indigo-400 mt-1"><i data-lucide="file-text" class="w-3 h-3"></i><span>Dosya</span></span>` : ``}</div></td><td class="px-6 py-4"><div class="text-sm font-medium text-gray-900 dark:text-white">${expense.receiptNo}</div><div class="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[150px]">${expense.description || ''}</div></td><td class="px-6 py-4 whitespace-nowrap"><span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${catColor}">${expense.category}</span></td><td class="px-6 py-4 whitespace-nowrap text-right text-sm font-bold text-gray-900 dark:text-white">${formatCurrency(expense.amount)}</td><td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"><div class="flex items-center justify-end gap-2">${btns}</div></td>`;
+                    tbody.appendChild(tr);
+                });
+                lucide.createIcons();
             }
         }
 
-        async function handleFormSubmit(e) {
-            e.preventDefault();
-            if (!currentUser) return;
-            const btnSubmit = document.getElementById('btn-submit');
-            btnSubmit.disabled = true; btnSubmit.innerText = "İşleniyor...";
-            try {
-                const data = {
-                    expenseDate: document.getElementById('expense-date').value,
-                    receiptNo: document.getElementById('receipt-no').value,
-                    amount: parseFloat(document.getElementById('amount').value),
-                    category: document.getElementById('category').value,
-                    description: document.getElementById('description').value,
-                    isRecurring: document.getElementById('is-recurring').checked
-                };
-                
-                if (editingId) {
-                    const oldDoc = expenses.find(e => e.id === editingId);
-                    const updates = {};
-                    const changes = [];
-                    if(oldDoc.amount !== data.amount) { updates.amount = data.amount; changes.push("Tutar güncellendi"); }
-                    updates.expenseDate = data.expenseDate;
-                    updates.receiptNo = data.receiptNo;
-                    updates.category = data.category;
-                    updates.description = data.description;
-                    updates.isRecurring = data.isRecurring;
-                    if (fileData) {
-                        updates.fileName = fileName;
-                        updates.fileType = fileType; updates.hasFile = true;
-                        await uploadFileChunks(editingId, fileData); changes.push("Dosya güncellendi");
-                    }
-                    await updateDoc(getUserDocPath('expenses', editingId), updates);
-                    await createLog(editingId, changes);
-                } else {
-                    const newDoc = { ...data, fileName: fileName || 'Dosya Yok', fileType: fileType, hasFile: !!fileData, createdAt: Date.now(), isDeleted: false };
-                    const docRef = await addDoc(getUserDataPath('expenses'), newDoc);
-                    if (fileData) await uploadFileChunks(docRef.id, fileData);
-                }
-                resetForm();
-            } catch (err) { console.error(err); alert("Hata oluştu: " + err.message); } 
-            finally { btnSubmit.disabled = false; btnSubmit.innerHTML = `<span>${editingId?'Değişiklikleri Kaydet':'Gideri Kaydet'}</span>`; }
-        }
+        // Functions needed for HTML events (Window binding)
+        window.loadExpenseToForm = (id) => { const e = expenses.find(x => x.id === id); if(e) loadExpenseToForm(e); };
+        window.openModal = (id) => { const e = expenses.find(x => x.id === id); if(e) openModal(e); };
+        
+        // --- NEW DELETE LOGIC USING MODAL ---
+        window.softDelete = (id) => { 
+            pendingDeleteId = id; 
+            pendingDeleteType = 'soft'; 
+            document.getElementById('delete-modal').classList.remove('hidden');
+            setTimeout(() => {
+                document.getElementById('delete-modal').classList.remove('opacity-0');
+                document.getElementById('delete-modal-content').classList.remove('scale-95');
+            }, 10);
+        };
+        window.permanentDelete = (id) => { 
+            pendingDeleteId = id; 
+            pendingDeleteType = 'permanent'; 
+            document.getElementById('delete-modal').classList.remove('hidden');
+            setTimeout(() => {
+                document.getElementById('delete-modal').classList.remove('opacity-0');
+                document.getElementById('delete-modal-content').classList.remove('scale-95');
+            }, 10);
+        };
 
-        async function uploadFileChunks(parentId, fullBase64) {
-            const CHUNK_SIZE = 800 * 1024;
-            const chunks = [];
-            for (let i = 0; i < fullBase64.length; i += CHUNK_SIZE) chunks.push(fullBase64.slice(i, i + CHUNK_SIZE));
-            const promises = chunks.map((chunkData, index) => addDoc(getUserDataPath('expense_chunks'), { parentExpenseId: parentId, index, data: chunkData }));
-            await Promise.all(promises);
-        }
-        async function createLog(expenseId, changes) {
-            if (!changes.length) return;
-            await addDoc(getUserDataPath('logs'), { expenseId, changes, timestamp: Date.now(), type: 'update' });
-        }
-
-        function resetForm() {
-            editingId = null;
-            document.getElementById('expense-form').reset();
-            document.getElementById('expense-date').value = new Date().toISOString().split('T')[0];
-            fileData = null; fileName = '';
-            document.getElementById('btn-ocr').disabled = true;
-            document.getElementById('file-display-area').innerHTML = `<i data-lucide="upload" class="mx-auto h-8 w-8 text-gray-400"></i><div class="flex text-sm text-gray-600 dark:text-gray-400 justify-center mt-2"><span class="font-medium text-indigo-600 dark:text-indigo-400">Dosya Seç</span></div>`;
-            document.getElementById('btn-cancel-edit').classList.add('hidden');
-            document.getElementById('form-title').innerText = "Yeni Fiş Ekle";
-            document.getElementById('btn-submit').innerHTML = `<span>Gideri Kaydet</span>`;
-            lucide.createIcons();
-        }
-
-        function loadExpenseToForm(expense) {
-            editingId = expense.id;
-            document.getElementById('expense-date').value = expense.expenseDate;
-            document.getElementById('receipt-no').value = expense.receiptNo;
-            document.getElementById('amount').value = expense.amount;
-            document.getElementById('category').value = expense.category;
-            document.getElementById('description').value = expense.description || '';
-            document.getElementById('is-recurring').checked = expense.isRecurring || false;
-            
-            document.getElementById('form-title').innerText = "Kayıt Düzenleniyor";
-            document.getElementById('btn-submit').innerText = "Değişiklikleri Kaydet";
-            document.getElementById('btn-cancel-edit').classList.remove('hidden');
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-
-        async function softDelete(id) { if(confirm('Çöp kutusuna taşınsın mı?')) await updateDoc(getUserDocPath('expenses', id), { isDeleted: true }); }
-        async function restoreExpense(id) { await updateDoc(getUserDocPath('expenses', id), { isDeleted: false }); }
-        async function permanentDelete(id) { if(confirm('KALICI olarak silinecek?')) await deleteDoc(getUserDocPath('expenses', id)); }
-
-        function formatCurrency(val) { return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(val); }
-        function toggleClearFilterBtn() {
-            const btn = document.getElementById('btn-clear-filter');
-            if(filterStartDate || filterEndDate) btn.classList.remove('hidden'); else btn.classList.add('hidden');
-        }
+        window.restoreExpense = async (id) => { await updateDoc(getUserDocPath('expenses', id), { isDeleted: false }); };
         function clearFilters() {
             document.getElementById('filter-start-date').value = '';
             document.getElementById('filter-end-date').value = '';
@@ -949,8 +1000,88 @@
             filterStartDate = ''; filterEndDate = ''; searchQuery = '';
             toggleClearFilterBtn(); renderList();
         }
+        function toggleClearFilterBtn() {
+            const btn = document.getElementById('btn-clear-filter');
+            if(filterStartDate || filterEndDate) btn.classList.remove('hidden'); else btn.classList.add('hidden');
+        }
 
-        // --- EXCEL ---
+        // OCR
+        function runOCR() {
+            if (!fileObj) { alert("Dosya seçin."); return; }
+            const btn = document.getElementById('btn-ocr');
+            const status = document.getElementById('ocr-status');
+            btn.disabled = true; status.classList.remove('hidden'); status.innerText = "Taranıyor...";
+            const reader = new FileReader();
+            reader.onload = () => {
+                Tesseract.recognize(reader.result, 'tur', { logger: m => status.innerText = `İlerleme: %${Math.round(m.progress * 100)}` })
+                .then(({ data: { text } }) => {
+                    const receiptMatch = text.match(/(?:Fiş|Fatura|Sıra|Belge)?\s*No[:.\s]*([A-Z0-9-]{2,})/i);
+                    if (receiptMatch) document.getElementById('receipt-no').value = receiptMatch[1].trim();
+                    const prices = text.match(/\b\d+[.,]\d{2}\b/g);
+                    if (prices) {
+                        const amounts = prices.map(p => parseFloat(p.replace(/\./g, '').replace(',', '.'))).filter(n => !isNaN(n));
+                        if (amounts.length > 0) document.getElementById('amount').value = Math.max(...amounts);
+                    }
+                    status.innerText = "Tamamlandı.";
+                }).finally(() => { btn.disabled = false; });
+            };
+            reader.readAsDataURL(fileObj);
+        }
+
+        // Modal
+        function openModal(expense) {
+            const modal = document.getElementById('document-modal');
+            document.getElementById('modal-title').innerText = expense.receiptNo;
+            document.getElementById('modal-subtitle').innerText = `${expense.category} • ${expense.expenseDate}`;
+            document.getElementById('modal-desc').innerText = expense.description;
+            document.getElementById('modal-amount').innerText = formatCurrency(expense.amount);
+            const fileCont = document.getElementById('view-file-container');
+            const btnDown = document.getElementById('btn-download');
+            
+            fileCont.innerHTML = "Yükleniyor...";
+            modal.classList.remove('hidden');
+            setTimeout(() => { modal.classList.remove('opacity-0'); document.getElementById('modal-content').classList.remove('scale-95'); }, 10);
+
+            if(expense.fileUrl) {
+                currentDocData = expense.fileUrl;
+                window.currentDownloadName = expense.fileName;
+                const ext = expense.fileName?.split('.').pop().toLowerCase();
+                if(ext === 'pdf') fileCont.innerHTML = `<iframe src="${expense.fileUrl}" class="w-full h-full"></iframe>`;
+                else fileCont.innerHTML = `<img src="${expense.fileUrl}" class="max-w-full max-h-full object-contain">`;
+                btnDown.classList.remove('hidden');
+            } else {
+                fileCont.innerText = "Dosya Yok";
+                btnDown.classList.add('hidden');
+            }
+
+            const qLogs = query(getUserDataPath('logs'), where('expenseId', '==', expense.id));
+            getDocs(qLogs).then(s => {
+                const logs = s.docs.map(d=>d.data()).sort((a,b)=>b.timestamp-a.timestamp);
+                document.getElementById('view-logs-container').innerHTML = logs.map(l => `<div class="p-2 border-b text-sm"><span class="text-gray-500">${new Date(l.timestamp).toLocaleString('tr-TR')}</span><ul class="ml-4 list-disc">${l.changes.map(c=>`<li>${c}</li>`).join('')}</ul></div>`).join('') || "Log yok";
+            });
+        }
+
+        function closeModal() {
+            const m = document.getElementById('document-modal');
+            m.classList.add('opacity-0');
+            document.getElementById('modal-content').classList.add('scale-95');
+            setTimeout(() => m.classList.add('hidden'), 300);
+        }
+        function switchModalTab(tab) {
+            if(tab === 'file') {
+                document.getElementById('view-file-container').classList.remove('hidden');
+                document.getElementById('view-logs-container').classList.add('hidden');
+            } else {
+                document.getElementById('view-file-container').classList.add('hidden');
+                document.getElementById('view-logs-container').classList.remove('hidden');
+            }
+        }
+        function downloadFile() {
+            if(!currentDocData) return;
+            window.open(currentDocData, '_blank');
+        }
+        function formatCurrency(val) { return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(val); }
+
         function exportExcel(source) {
             let listToExport = [];
             if (source === 'list') {
@@ -981,110 +1112,6 @@
             link.download = `gider_listesi_${new Date().toISOString().slice(0,10)}.csv`;
             document.body.appendChild(link); link.click(); document.body.removeChild(link);
         }
-
-        // --- OCR ---
-        function runOCR() {
-            if (!fileData) { alert("Dosya seçin."); return; }
-            const btn = document.getElementById('btn-ocr');
-            const status = document.getElementById('ocr-status');
-            btn.disabled = true; status.classList.remove('hidden'); status.innerText = "Taranıyor...";
-            Tesseract.recognize(fileData, 'tur', { logger: m => status.innerText = `İlerleme: %${Math.round(m.progress * 100)}` })
-            .then(({ data: { text } }) => {
-                const receiptMatch = text.match(/(?:Fiş|Fatura|Sıra|Belge)?\s*No[:.\s]*([A-Z0-9-]{2,})/i);
-                if (receiptMatch) document.getElementById('receipt-no').value = receiptMatch[1].trim();
-                
-                const dateMatch = text.match(/(\d{2}[./-]\d{2}[./-]\d{4})/) || text.match(/(\d{4}[./-]\d{2}[./-]\d{2})/);
-                if (dateMatch) {
-                    let d = dateMatch[0].replace(/\./g, '-').replace(/\//g, '-');
-                    if (d.split('-')[0].length === 2) { const p = d.split('-'); d = `${p[2]}-${p[1]}-${p[0]}`; }
-                    document.getElementById('expense-date').value = d;
-                }
-
-                const prices = text.match(/\b\d+[.,]\d{2}\b/g);
-                if (prices) {
-                    const amounts = prices.map(p => parseFloat(p.replace(/\./g, '').replace(',', '.'))).filter(n => !isNaN(n));
-                    if (amounts.length > 0) document.getElementById('amount').value = Math.max(...amounts);
-                }
-                status.innerText = "Tamamlandı.";
-            }).finally(() => { btn.disabled = false; });
-        }
-
-        // --- MODAL ---
-        async function openModal(expense) {
-            const modal = document.getElementById('document-modal');
-            const modalTitle = document.getElementById('modal-title');
-            const modalSub = document.getElementById('modal-subtitle');
-            const modalDesc = document.getElementById('modal-desc');
-            const modalAmt = document.getElementById('modal-amount');
-            const fileCont = document.getElementById('view-file-container');
-            const logCont = document.getElementById('view-logs-container');
-            const btnDown = document.getElementById('btn-download');
-
-            modalTitle.innerText = expense.receiptNo;
-            modalSub.innerText = `${expense.category} • ${expense.expenseDate}`;
-            modalDesc.innerText = expense.description;
-            modalAmt.innerText = formatCurrency(expense.amount);
-            
-            fileCont.innerHTML = "Yükleniyor...";
-            fileCont.classList.remove('hidden');
-            logCont.classList.add('hidden');
-            btnDown.classList.add('hidden');
-            modal.classList.remove('hidden');
-            setTimeout(() => { modal.classList.remove('opacity-0'); document.getElementById('modal-content').classList.remove('scale-95'); }, 10);
-            if (expense.hasFile || expense.fileData) {
-                try {
-                    let fullString = expense.fileData;
-                    if (!fullString) {
-                        const q = query(getUserDataPath('expense_chunks'), where('parentExpenseId', '==', expense.id));
-                        const s = await getDocs(q);
-                        const chunks = s.docs.map(d => d.data()).sort((a,b)=>a.index-b.index);
-                        fullString = chunks.map(c=>c.data).join('');
-                    }
-                    currentDocData = fullString;
-                    window.currentDownloadName = expense.fileName || 'belge';
-                    
-                    if (expense.fileType?.includes('pdf') || expense.fileName?.endsWith('pdf')) {
-                        fileCont.innerHTML = `<iframe src="${fullString}" class="w-full h-full"></iframe>`;
-                    } else {
-                        fileCont.innerHTML = `<img src="${fullString}" class="max-w-full max-h-full object-contain">`;
-                    }
-                    btnDown.classList.remove('hidden');
-                } catch(e) { fileCont.innerText = "Hata"; }
-            } else {
-                fileCont.innerText = "Dosya Yok";
-            }
-            
-            // Logs
-            const qLogs = query(getUserDataPath('logs'), where('expenseId', '==', expense.id));
-            getDocs(qLogs).then(s => {
-                const logs = s.docs.map(d=>d.data()).sort((a,b)=>b.timestamp-a.timestamp);
-                logCont.innerHTML = logs.map(l => `<div class="p-2 border-b text-sm"><span class="text-gray-500">${new Date(l.timestamp).toLocaleString('tr-TR')}</span><ul class="ml-4 list-disc">${l.changes.map(c=>`<li>${c}</li>`).join('')}</ul></div>`).join('') || "Log yok";
-            });
-        }
-
-        function closeModal() {
-            const m = document.getElementById('document-modal');
-            m.classList.add('opacity-0');
-            document.getElementById('modal-content').classList.add('scale-95');
-            setTimeout(() => m.classList.add('hidden'), 300);
-        }
-
-        function switchModalTab(tab) {
-            if(tab === 'file') {
-                document.getElementById('view-file-container').classList.remove('hidden');
-                document.getElementById('view-logs-container').classList.add('hidden');
-            } else {
-                document.getElementById('view-file-container').classList.add('hidden');
-                document.getElementById('view-logs-container').classList.remove('hidden');
-            }
-        }
-
-        function downloadFile() {
-            if(!currentDocData) return;
-            const a = document.createElement('a'); a.href = currentDocData; a.download = window.currentDownloadName;
-            document.body.appendChild(a); a.click(); document.body.removeChild(a);
-        }
-
     </script>
 </body>
 </html>
