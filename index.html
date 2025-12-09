@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zafer Admin - Gider Takip</title>
+    <title>Güvenli Şirket Gider Takip Sistemi</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -67,10 +67,10 @@
         <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md p-8 border border-gray-200 dark:border-gray-700">
             <div class="text-center mb-8">
                 <div class="bg-indigo-600 w-16 h-16 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg transform -rotate-6">
-                    <i data-lucide="lock" class="w-8 h-8 text-white"></i>
+                    <i data-lucide="shield-check" class="w-8 h-8 text-white"></i>
                 </div>
-                <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Gider Takip Sistemi</h2>
-                <p class="text-gray-500 dark:text-gray-400 mt-2">Yönetici Girişi</p>
+                <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Güvenli Gider Takip</h2>
+                <p class="text-gray-500 dark:text-gray-400 mt-2">Kişisel Hesabınıza Giriş Yapın</p>
             </div>
 
             <form id="auth-form" class="space-y-4">
@@ -78,16 +78,17 @@
                 
                 <div>
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">E-posta Adresi</label>
-                    <input type="email" id="auth-email" required class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all" placeholder="">
+                    <input type="email" id="auth-email" required class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all" placeholder="ornek@sirket.com">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Şifre</label>
-                    <input type="password" id="auth-password" required class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all" placeholder="">
+                    <input type="password" id="auth-password" required class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all" placeholder="••••••••">
                 </div>
 
                 <button type="submit" id="btn-login" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-lg font-bold transition-colors shadow-md flex justify-center items-center">
-                    <span>Giriş Yap</span>
+                    <span>Giriş Yap / Kayıt Ol</span>
                 </button>
+                <p class="text-xs text-center text-gray-400 mt-2">Hesabınız yoksa otomatik oluşturulacaktır.</p>
             </form>
         </div>
     </div>
@@ -129,7 +130,7 @@
         <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div id="page-loader" class="fixed inset-0 bg-white dark:bg-gray-900 z-40 flex flex-col items-center justify-center hidden">
                 <div class="loader w-10 h-10 border-4 border-t-indigo-600 mb-4"></div>
-                <p class="text-gray-500 dark:text-gray-400">Veriler Yükleniyor...</p>
+                <p class="text-gray-500 dark:text-gray-400">Verileriniz Güvenle Yükleniyor...</p>
             </div>
 
             <div id="main-view" class="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -190,18 +191,12 @@
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Gider Kalemi</label>
                                     <select id="category" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
-                                        <option value="Kırtasiye ve Ofis Malzemeleri">Kırtasiye ve Ofis Malzemeleri</option>
-                                        <option value="Teknolojik Donanım ve Yazılım">Teknolojik Donanım ve Yazılım</option>
-                                        <option value="Ofis Mobilyası ve Donanımları">Ofis Mobilyası ve Donanımları</option>
-                                        <option value="Mutfak ve İkram Giderleri">Mutfak ve İkram Giderleri</option>
-                                        <option value="Temizlik ve Hijyen Giderleri">Temizlik ve Hijyen Giderleri</option>
-                                        <option value="Enerji ve İletişim Giderleri">Enerji ve İletişim Giderleri</option>
-                                        <option value="Kira ve Bağlantılı Giderler">Kira ve Bağlantılı Giderler</option>
-                                        <option value="Ulaşım ve Lojistik Giderleri">Ulaşım ve Lojistik Giderleri</option>
-                                        <option value="Depo ve Saklama Giderleri">Depo ve Saklama Giderleri</option>
-                                        <option value="Personel ile İlgili Ofis Giderleri">Personel ile İlgili Ofis Giderleri</option>
-                                        <option value="Güvenlik ve Sigorta Giderleri">Güvenlik ve Sigorta Giderleri</option>
-                                        <option value="Resmî ve Hukuki Giderler">Resmî ve Hukuki Giderler</option>
+                                        <option value="Ofis">Ofis Giderleri</option>
+                                        <option value="Yemek">Yemek & İkram</option>
+                                        <option value="Ulaşım">Ulaşım & Yakıt</option>
+                                        <option value="Konaklama">Konaklama</option>
+                                        <option value="Personel">Personel</option>
+                                        <option value="Diğer">Diğer</option>
                                     </select>
                                 </div>
                                 <div class="flex items-center gap-2">
@@ -372,9 +367,6 @@
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, deleteDoc, updateDoc, getDocs, doc, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        // GİRİŞE İZİN VERİLEN TEK E-POSTA ADRESİ
-        const ALLOWED_EMAIL = "zafer@admin.com";
-
         const firebaseConfig = {
             apiKey: "AIzaSyBYtnQ1E2SQTBx3TwlP56joVH6Ycjhkkas",
             authDomain: "kasakontrol-294bc.firebaseapp.com",
@@ -409,15 +401,14 @@
         let chartInstance1 = null;
         let chartInstance2 = null;
 
-        // --- DÜZELTİLEN YOL (PATH) ---
-        // data klasörü kaldırıldı: users/{uid}/expenses
+        // --- GÜVENLİK YARDIMCI FONKSİYONLARI ---
         const getUserDataPath = (collectionName) => {
             if (!currentUser) return null;
-            return collection(db, 'artifacts', appId, 'users', currentUser.uid, collectionName);
+            return collection(db, 'artifacts', appId, 'users', currentUser.uid, 'data', collectionName);
         };
         const getUserDocPath = (collectionName, docId) => {
             if (!currentUser) return null;
-            return doc(db, 'artifacts', appId, 'users', currentUser.uid, collectionName, docId);
+            return doc(db, 'artifacts', appId, 'users', currentUser.uid, 'data', collectionName, docId);
         }
 
         // --- GLOBAL UI FUNCTIONS ---
@@ -470,7 +461,6 @@
             onAuthStateChanged(auth, (user) => {
                 if (user) {
                     currentUser = user;
-                    // Sadece güvenli veri dinlemeyi başlat
                     document.getElementById('login-view').classList.add('hidden');
                     document.getElementById('app-view').classList.remove('hidden');
                     startDataListener();
@@ -495,20 +485,13 @@
                 const pass = document.getElementById('auth-password').value;
                 authError.classList.add('hidden');
 
-                if(email !== ALLOWED_EMAIL) {
-                    authError.innerText = "Bu e-posta adresi ile giriş yapma yetkiniz bulunmamaktadır.";
-                    authError.classList.remove('hidden');
-                    return;
-                }
-
                 signInWithEmailAndPassword(auth, email, pass).catch(err => {
                     if(err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
-                        // Eğer yönetici hesabı henüz yoksa oluştur, varsa hata ver.
-                        createUserWithEmailAndPassword(auth, email, pass).then(() => {
-                           // Başarılı giriş
-                        }).catch(e => {
-                           authError.innerText = "Giriş Hatası: " + e.message;
-                           authError.classList.remove('hidden');
+                         createUserWithEmailAndPassword(auth, email, pass).then(() => {
+                            alert("Yeni hesap oluşturuldu ve giriş yapıldı.");
+                         }).catch(createErr => {
+                            authError.innerText = "Kayıt Hatası: " + createErr.message;
+                            authError.classList.remove('hidden');
                         });
                     } else {
                         authError.innerText = "Giriş Hatası: " + err.message;
@@ -645,20 +628,7 @@
                     const date = expense.expenseDate ? new Date(expense.expenseDate).toLocaleDateString('tr-TR') : '-';
                     const hasFile = expense.hasFile || !!expense.fileData;
                     
-                    const colors = {
-                        'Kırtasiye ve Ofis Malzemeleri': 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
-                        'Teknolojik Donanım ve Yazılım': 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300',
-                        'Ofis Mobilyası ve Donanımları': 'bg-slate-100 text-slate-700 dark:bg-slate-900/40 dark:text-slate-300',
-                        'Mutfak ve İkram Giderleri': 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300',
-                        'Temizlik ve Hijyen Giderleri': 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-300',
-                        'Enerji ve İletişim Giderleri': 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300',
-                        'Kira ve Bağlantılı Giderler': 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',
-                        'Ulaşım ve Lojistik Giderleri': 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300',
-                        'Depo ve Saklama Giderleri': 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
-                        'Personel ile İlgili Ofis Giderleri': 'bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-300',
-                        'Güvenlik ve Sigorta Giderleri': 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300',
-                        'Resmî ve Hukuki Giderler': 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300'
-                    };
+                    const colors = {'Ofis':'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300','Yemek':'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300','Ulaşım':'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300','Konaklama':'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300','Personel':'bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-300','Diğer':'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'};
                     const catColor = colors[expense.category] || 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
 
                     const tr = document.createElement('tr');
@@ -749,20 +719,7 @@
                     type: 'pie',
                     data: {
                         labels: Object.keys(catCounts),
-                        datasets: [{ data: Object.values(catCounts), backgroundColor: [
-                            '#3b82f6', // Blue
-                            '#6366f1', // Indigo
-                            '#64748b', // Slate
-                            '#f97316', // Orange
-                            '#06b6d4', // Cyan
-                            '#eab308', // Yellow
-                            '#ef4444', // Red
-                            '#22c55e', // Green
-                            '#d97706', // Amber
-                            '#ec4899', // Pink
-                            '#6b7280', // Gray
-                            '#a855f7'  // Purple
-                        ], borderWidth: 1 }]
+                        datasets: [{ data: Object.values(catCounts), backgroundColor: ['#3b82f6','#f97316','#22c55e','#a855f7','#ec4899','#6b7280'], borderWidth: 1 }]
                     },
                     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: textColor } } } }
                 });
@@ -851,20 +808,7 @@
             } else {
                 let html = '';
                 dailyList.forEach(ex => {
-                     const colors = {
-                        'Kırtasiye ve Ofis Malzemeleri': 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
-                        'Teknolojik Donanım ve Yazılım': 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300',
-                        'Ofis Mobilyası ve Donanımları': 'bg-slate-100 text-slate-700 dark:bg-slate-900/40 dark:text-slate-300',
-                        'Mutfak ve İkram Giderleri': 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300',
-                        'Temizlik ve Hijyen Giderleri': 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-300',
-                        'Enerji ve İletişim Giderleri': 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300',
-                        'Kira ve Bağlantılı Giderler': 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',
-                        'Ulaşım ve Lojistik Giderleri': 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300',
-                        'Depo ve Saklama Giderleri': 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
-                        'Personel ile İlgili Ofis Giderleri': 'bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-300',
-                        'Güvenlik ve Sigorta Giderleri': 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300',
-                        'Resmî ve Hukuki Giderler': 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300'
-                    };
+                    const colors = {'Ofis':'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300','Yemek':'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300','Ulaşım':'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300','Konaklama':'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300','Personel':'bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-300','Diğer':'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'};
                     const catColor = colors[ex.category] || 'bg-gray-100';
                     html += `
                         <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-100 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer" onclick="window.openModal('${ex.id}')">
