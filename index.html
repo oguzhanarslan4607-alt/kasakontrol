@@ -796,30 +796,38 @@
             const todayStr = getLocalDateString();
             const monthNames = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
             document.getElementById('calendar-month-label').innerHTML = `<i data-lucide="calendar" class="w-5 h-5 text-indigo-600 dark:text-indigo-400"></i> ${monthNames[month]} ${year}`;
+
             const firstDay = new Date(year, month, 1);
             const lastDay = new Date(year, month + 1, 0);
+            
             let startDayIndex = firstDay.getDay(); 
             if (startDayIndex === 0) startDayIndex = 6; else startDayIndex -= 1;
+
             const activeExpenses = expenses.filter(e => !e.isDeleted);
+
             for (let i = 0; i < startDayIndex; i++) calendarGrid.innerHTML += `<div></div>`;
             for (let i = 1; i <= lastDay.getDate(); i++) {
                 const dayStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
                 const dailyExpenses = activeExpenses.filter(e => e.expenseDate === dayStr);
-                const hasExpense = dailyExpenses.length > 0;
+                const dailyTotal = dailyExpenses.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+                
                 const dayDiv = document.createElement('div');
                 let className = "calendar-day rounded-lg cursor-pointer";
                 if(dayStr === todayStr) className += " today";
                 if(selectedDate === dayStr) className += " selected";
                 dayDiv.className = className;
-                dayDiv.onclick = () => { selectedDate = dayStr; renderCalendarView(); renderSelectedDateDetails(); };
-                let dotsHtml = '';
-                if(hasExpense) {
-                    dotsHtml = `<div class="has-expense-indicator">`;
-                    for(let k=0; k<Math.min(dailyExpenses.length, 3); k++) dotsHtml += `<div class="dot"></div>`;
-                    if(dailyExpenses.length > 3) dotsHtml += `<span class="text-[8px] text-indigo-600 dark:text-indigo-400 leading-none">+</span>`;
-                    dotsHtml += `</div>`;
+                dayDiv.onclick = () => { 
+                    selectedDate = dayStr; 
+                    renderCalendarView(); 
+                    renderSelectedDateDetails();
+                };
+
+                let contentHtml = `<span class="text-sm text-gray-700 dark:text-gray-300">${i}</span>`;
+                if (dailyTotal > 0) {
+                     contentHtml += `<div class="mt-auto text-[10px] font-bold text-indigo-600 dark:text-indigo-400 text-right truncate w-full">${formatCurrency(dailyTotal)}</div>`;
                 }
-                dayDiv.innerHTML = `<span class="text-sm text-gray-700 dark:text-gray-300">${i}</span>${dotsHtml}`;
+                
+                dayDiv.innerHTML = contentHtml;
                 calendarGrid.appendChild(dayDiv);
             }
             lucide.createIcons();
