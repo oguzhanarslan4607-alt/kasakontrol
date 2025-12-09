@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Şirket Gider Takip Sistemi</title>
+    <title>Güvenli Şirket Gider Takip Sistemi</title>
     
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -26,13 +25,10 @@
         }
     </script>
     
-    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
 
-    <!-- Chart.js (Grafikler İçin) -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    <!-- Tesseract.js (OCR İçin) -->
     <script src='https://unpkg.com/tesseract.js@v2.1.0/dist/tesseract.min.js'></script>
 
     <style>
@@ -45,11 +41,9 @@
         .dark ::-webkit-scrollbar-thumb { background: #4b5563; }
 
         .loader {
-            border: 3px solid #f3f3f3;
-            border-radius: 50%;
+            border: 3px solid #f3f3f3; border-radius: 50%;
             border-top: 3px solid #4f46e5;
-            width: 20px;
-            height: 20px;
+            width: 20px; height: 20px;
             animation: spin 1s linear infinite;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
@@ -69,15 +63,14 @@
 </head>
 <body class="bg-gray-50 dark:bg-gray-900 font-sans text-gray-800 dark:text-gray-100 min-h-screen transition-colors duration-200">
 
-    <!-- GİRİŞ EKRANI (LOGIN) -->
     <div id="login-view" class="fixed inset-0 z-50 bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4">
         <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md p-8 border border-gray-200 dark:border-gray-700">
             <div class="text-center mb-8">
                 <div class="bg-indigo-600 w-16 h-16 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg transform -rotate-6">
-                    <i data-lucide="receipt" class="w-8 h-8 text-white"></i>
+                    <i data-lucide="shield-check" class="w-8 h-8 text-white"></i>
                 </div>
-                <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Gider Takip Sistemi</h2>
-                <p class="text-gray-500 dark:text-gray-400 mt-2">Yönetici Girişi</p>
+                <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Güvenli Gider Takip</h2>
+                <p class="text-gray-500 dark:text-gray-400 mt-2">Kişisel Hesabınıza Giriş Yapın</p>
             </div>
 
             <form id="auth-form" class="space-y-4">
@@ -85,7 +78,7 @@
                 
                 <div>
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">E-posta Adresi</label>
-                    <input type="email" id="auth-email" required class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all" placeholder="">
+                    <input type="email" id="auth-email" required class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all" placeholder="ornek@sirket.com">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Şifre</label>
@@ -93,15 +86,14 @@
                 </div>
 
                 <button type="submit" id="btn-login" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-lg font-bold transition-colors shadow-md flex justify-center items-center">
-                    <span>Giriş Yap</span>
+                    <span>Giriş Yap / Kayıt Ol</span>
                 </button>
+                <p class="text-xs text-center text-gray-400 mt-2">Hesabınız yoksa otomatik oluşturulacaktır.</p>
             </form>
         </div>
     </div>
 
-    <!-- ANA UYGULAMA (Giriş yapılınca görünür) -->
     <div id="app-view" class="hidden">
-        <!-- Header -->
         <header class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-20 transition-colors duration-200">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
                 <div class="flex items-center gap-2">
@@ -125,11 +117,9 @@
                             <i data-lucide="trash-2" class="w-4 h-4"></i> Çöp
                         </button>
                     </div>
-                    <!-- Dark Mode Toggle -->
                     <button onclick="toggleTheme()" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 transition-colors">
                         <i id="theme-icon" data-lucide="moon" class="w-5 h-5"></i>
                     </button>
-                    <!-- Logout -->
                     <button onclick="logout()" class="p-2 rounded-full hover:bg-red-100 dark:hover:bg-red-900/30 text-red-500 transition-colors ml-1" title="Çıkış Yap">
                         <i data-lucide="log-out" class="w-5 h-5"></i>
                     </button>
@@ -138,17 +128,12 @@
         </header>
 
         <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            
-            <!-- Yükleniyor Göstergesi -->
             <div id="page-loader" class="fixed inset-0 bg-white dark:bg-gray-900 z-40 flex flex-col items-center justify-center hidden">
                 <div class="loader w-10 h-10 border-4 border-t-indigo-600 mb-4"></div>
-                <p class="text-gray-500 dark:text-gray-400">Veriler Yükleniyor...</p>
+                <p class="text-gray-500 dark:text-gray-400">Verileriniz Güvenle Yükleniyor...</p>
             </div>
 
-            <!-- ANA GİDER LİSTESİ VE FORM GÖRÜNÜMÜ -->
             <div id="main-view" class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                
-                <!-- SOL: FORM ALANI -->
                 <div class="lg:col-span-1">
                     <div id="form-section">
                         <div id="form-card" class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden sticky top-24 transition-colors">
@@ -164,17 +149,13 @@
                             
                             <form id="expense-form" class="p-6 space-y-4">
                                 <input type="hidden" id="editing-id">
-
                                 <div id="error-msg" class="hidden p-3 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 text-sm rounded-lg flex items-center gap-2">
                                     <i data-lucide="alert-circle" class="w-4 h-4"></i> <span></span>
                                 </div>
-
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Açıklama</label>
                                     <input type="text" id="description" placeholder="Opsiyonel" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
                                 </div>
-
-                                <!-- Dosya Yükleme & OCR -->
                                 <div>
                                     <label id="file-label" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">PDF / Görsel (OCR Destekli)</label>
                                     <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 dark:border-gray-600 border-dashed rounded-lg hover:border-indigo-500 dark:hover:border-indigo-400 transition-colors bg-gray-50 dark:bg-gray-900 hover:bg-white dark:hover:bg-gray-800 cursor-pointer relative group">
@@ -192,7 +173,6 @@
                                     </button>
                                     <div id="ocr-status" class="text-xs text-center mt-1 text-gray-500 hidden"></div>
                                 </div>
-
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Fiş Tarihi</label>
                                     <input type="date" id="expense-date" required class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
@@ -219,12 +199,10 @@
                                         <option value="Diğer">Diğer</option>
                                     </select>
                                 </div>
-
                                 <div class="flex items-center gap-2">
                                     <input type="checkbox" id="is-recurring" class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
                                     <label for="is-recurring" class="text-sm text-gray-700 dark:text-gray-300">Her Ay Tekrarla (Otomatik)</label>
                                 </div>
-
                                 <button type="submit" id="btn-submit" class="w-full bg-gray-900 dark:bg-indigo-600 hover:bg-gray-800 dark:hover:bg-indigo-700 text-white py-2.5 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                                     <span>Gideri Kaydet</span>
                                 </button>
@@ -232,7 +210,6 @@
                         </div>
                     </div>
 
-                    <!-- Sol Panel Çöp Kutusu -->
                     <div class="hidden" id="trash-info-left">
                         <div class="bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 rounded-xl p-6 sticky top-24">
                             <div class="flex items-center gap-3 mb-2">
@@ -244,10 +221,7 @@
                     </div>
                 </div>
 
-                <!-- SAĞ: LİSTE ALANI -->
                 <div class="lg:col-span-2 space-y-4">
-                    
-                    <!-- Arama Paneli -->
                     <div id="search-panel" class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 space-y-3">
                         <div class="flex items-center justify-between">
                             <h3 class="font-semibold text-gray-900 dark:text-white flex items-center gap-2"><i data-lucide="search" class="w-4 h-4"></i> Arama & Filtreleme</h3>
@@ -271,7 +245,6 @@
                         </button>
                     </div>
 
-                    <!-- Sağ Panel Çöp Kutusu Uyarısı -->
                     <div class="hidden" id="trash-info-right">
                         <div class="bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 rounded-xl p-4 mb-4 flex items-center gap-3">
                             <i data-lucide="alert-triangle" class="w-5 h-5 text-red-600 dark:text-red-400"></i>
@@ -279,7 +252,6 @@
                         </div>
                     </div>
 
-                    <!-- Boş Durum -->
                     <div id="empty-state" class="hidden bg-white dark:bg-gray-800 rounded-xl p-12 text-center border border-dashed border-gray-300 dark:border-gray-700">
                         <div class="bg-gray-50 dark:bg-gray-700 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                             <i data-lucide="wallet" class="w-8 h-8 text-gray-400 dark:text-gray-500"></i>
@@ -288,7 +260,6 @@
                         <p class="text-gray-500 dark:text-gray-400 mt-1">Liste boş veya arama kriterine uygun veri yok.</p>
                     </div>
 
-                    <!-- Tablo -->
                     <div id="table-container" class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
                         <div class="overflow-x-auto">
                             <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
@@ -308,7 +279,6 @@
                 </div>
             </div>
 
-            <!-- RAPORLAR GÖRÜNÜMÜ -->
             <div id="reports-view" class="hidden space-y-8">
                 <div class="flex items-center justify-between">
                     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-1 inline-flex">
@@ -338,7 +308,6 @@
                 </div>
             </div>
 
-            <!-- TAKVİM GÖRÜNÜMÜ -->
             <div id="calendar-view" class="hidden space-y-4">
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     <div class="lg:col-span-2">
@@ -366,11 +335,9 @@
                     </div>
                 </div>
             </div>
-
         </main>
     </div>
 
-    <!-- MODAL -->
     <div id="document-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm transition-opacity duration-300 opacity-0">
         <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-4xl h-[85vh] flex flex-col overflow-hidden transform transition-all scale-95" id="modal-content">
             <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
@@ -395,11 +362,10 @@
         </div>
     </div>
 
-    <!-- APP LOGIC -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, deleteDoc, updateDoc, getDocs, doc, onSnapshot, query, where, writeBatch } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, deleteDoc, updateDoc, getDocs, doc, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBYtnQ1E2SQTBx3TwlP56joVH6Ycjhkkas",
@@ -420,13 +386,12 @@
         let expenses = [];
         let currentView = 'active'; 
         let editingId = null;
-        let fileData = null; 
+        let fileData = null;
         let fileName = '';
         let fileType = '';
         let isZoomed = false;
         let currentDocData = null;
-        let reportPeriod = 'daily'; 
-        
+        let reportPeriod = 'daily';
         let currentCalendarDate = new Date();
         let selectedDate = null;
         let searchQuery = '';
@@ -436,7 +401,17 @@
         let chartInstance1 = null;
         let chartInstance2 = null;
 
-        // --- GLOBAL FUNCTIONS FOR HTML ACCESS ---
+        // --- GÜVENLİK YARDIMCI FONKSİYONLARI ---
+        const getUserDataPath = (collectionName) => {
+            if (!currentUser) return null;
+            return collection(db, 'artifacts', appId, 'users', currentUser.uid, 'data', collectionName);
+        };
+        const getUserDocPath = (collectionName, docId) => {
+            if (!currentUser) return null;
+            return doc(db, 'artifacts', appId, 'users', currentUser.uid, 'data', collectionName, docId);
+        }
+
+        // --- GLOBAL UI FUNCTIONS ---
         window.toggleTheme = () => {
             if (document.documentElement.classList.contains('dark')) {
                 document.documentElement.classList.remove('dark');
@@ -448,7 +423,6 @@
             updateThemeIcon();
             if(currentView === 'reports') renderReports();
         };
-
         function updateThemeIcon() {
             const icon = document.getElementById('theme-icon');
             if(!icon) return;
@@ -467,32 +441,11 @@
 
         window.changeReportPeriod = (period) => {
             reportPeriod = period;
-            renderReports(); // Re-render logic handles styles
+            renderReports(); 
         };
-
         window.changeCalendarMonth = (offset) => {
             currentCalendarDate.setMonth(currentCalendarDate.getMonth() + offset);
             renderCalendarView();
-        };
-
-        window.toggleZoom = () => {
-            const img = document.getElementById('doc-image'); 
-            const icon = document.getElementById('zoom-icon');
-            const cont = document.getElementById('view-file-container');
-            if(!img) return;
-            isZoomed = !isZoomed;
-            if (isZoomed) { 
-                img.style.minWidth = '100%'; 
-                img.className = "w-auto h-auto max-w-none cursor-zoom-out"; 
-                cont.classList.remove('items-center', 'justify-center'); 
-                if(icon) icon.setAttribute('data-lucide', 'zoom-out'); 
-            } else { 
-                img.style.minWidth = ''; 
-                img.className = "max-w-full max-h-full object-contain cursor-zoom-in transition-all duration-300"; 
-                cont.classList.add('items-center', 'justify-center'); 
-                if(icon) icon.setAttribute('data-lucide', 'zoom-in'); 
-            }
-            lucide.createIcons();
         };
 
         window.exportExcel = exportExcel;
@@ -500,14 +453,11 @@
 
         window.onload = () => {
             lucide.createIcons();
-            
-            // Dark Mode Init
             if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
                 document.documentElement.classList.add('dark');
             }
             updateThemeIcon();
 
-            // Auth State
             onAuthStateChanged(auth, (user) => {
                 if (user) {
                     currentUser = user;
@@ -525,7 +475,7 @@
         };
 
         function setupEventListeners() {
-            // Auth Forms
+            // Auth
             const authForm = document.getElementById('auth-form');
             const authError = document.getElementById('auth-error');
 
@@ -535,28 +485,14 @@
                 const pass = document.getElementById('auth-password').value;
                 authError.classList.add('hidden');
 
-                // ADMIN CHECK
-                if(email !== "admin@zafer.com") {
-                    authError.innerText = "Sadece yönetici girişi yapılabilir.";
-                    authError.classList.remove('hidden');
-                    return;
-                }
-                
                 signInWithEmailAndPassword(auth, email, pass).catch(err => {
-                    // AUTO CREATE ADMIN IF NOT EXISTS
                     if(err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
-                        // Check if password matches the requested one for first time creation safety
-                        if(pass === "313131") {
-                            createUserWithEmailAndPassword(auth, email, pass).then(() => {
-                                alert("Yönetici hesabı oluşturuldu ve giriş yapıldı.");
-                            }).catch(createErr => {
-                                authError.innerText = "Kayıt Hatası: " + createErr.message;
-                                authError.classList.remove('hidden');
-                            });
-                        } else {
-                            authError.innerText = "Giriş Hatası: Kullanıcı bulunamadı veya şifre yanlış.";
+                         createUserWithEmailAndPassword(auth, email, pass).then(() => {
+                            alert("Yeni hesap oluşturuldu ve giriş yapıldı.");
+                         }).catch(createErr => {
+                            authError.innerText = "Kayıt Hatası: " + createErr.message;
                             authError.classList.remove('hidden');
-                        }
+                        });
                     } else {
                         authError.innerText = "Giriş Hatası: " + err.message;
                         authError.classList.remove('hidden');
@@ -564,19 +500,19 @@
                 });
             });
 
-            // App Navigation
+            // Nav
             document.getElementById('btn-view-active').addEventListener('click', () => changeView('active'));
             document.getElementById('btn-view-trash').addEventListener('click', () => changeView('trash'));
             document.getElementById('btn-view-reports').addEventListener('click', () => changeView('reports'));
             document.getElementById('btn-view-calendar').addEventListener('click', () => changeView('calendar'));
-
+            
             // Filter
             document.getElementById('search-input').addEventListener('input', (e) => { searchQuery = e.target.value.toLowerCase(); renderList(); });
             document.getElementById('filter-start-date').addEventListener('change', (e) => { filterStartDate = e.target.value; renderList(); toggleClearFilterBtn(); });
             document.getElementById('filter-end-date').addEventListener('change', (e) => { filterEndDate = e.target.value; renderList(); toggleClearFilterBtn(); });
             document.getElementById('btn-clear-filter').addEventListener('click', clearFilters);
 
-            // Expense Form
+            // Form
             document.getElementById('file-upload').addEventListener('change', handleFileSelect);
             document.getElementById('expense-form').addEventListener('submit', handleFormSubmit);
             document.getElementById('btn-cancel-edit').addEventListener('click', resetForm);
@@ -591,11 +527,8 @@
 
         // --- DATA ---
         function startDataListener() {
-            // Using public data path so all users share data (as per previous request)
-            const q = query(collection(db, 'artifacts', appId, 'public', 'data', 'expenses'));
-            
-            // To make it private per user, change to: 
-            // collection(db, 'artifacts', appId, 'users', currentUser.uid, 'expenses')
+            if(!currentUser) return;
+            const q = query(getUserDataPath('expenses'));
 
             onSnapshot(q, (snapshot) => {
                 const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -606,7 +539,6 @@
                 });
                 expenses = list;
                 
-                // Refresh current view
                 if(currentView === 'reports') renderReports();
                 else if(currentView === 'calendar') renderCalendarView();
                 else renderList();
@@ -622,13 +554,11 @@
             const btnTrash = document.getElementById('btn-view-trash');
             const btnReports = document.getElementById('btn-view-reports');
             const btnCalendar = document.getElementById('btn-view-calendar');
-            
             const mainView = document.getElementById('main-view');
             const reportsView = document.getElementById('reports-view');
             const calendarView = document.getElementById('calendar-view');
             const searchPanel = document.getElementById('search-panel');
 
-            // Reset classes
             const inactiveClass = "px-3 py-1.5 text-sm font-medium rounded-md transition-all text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white flex items-center gap-1";
             btnActive.className = inactiveClass;
             btnTrash.className = inactiveClass;
@@ -672,7 +602,6 @@
         // --- LIST RENDER ---
         function renderList() {
             let filtered = expenses.filter(item => currentView === 'active' ? !item.isDeleted : item.isDeleted);
-
             if (searchQuery) {
                 filtered = filtered.filter(item => 
                     (item.receiptNo && item.receiptNo.toLowerCase().includes(searchQuery)) ||
@@ -705,9 +634,7 @@
                     const tr = document.createElement('tr');
                     tr.className = `hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors ${editingId === expense.id ? 'bg-indigo-50/50 dark:bg-indigo-900/20' : ''}`;
                     
-                    // Buttons
                     let btns = `<button onclick="window.openModal('${expense.id}')" class="p-1.5 rounded-md text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-colors"><i data-lucide="eye" class="w-4 h-4"></i></button>`;
-                    
                     if (currentView === 'active') {
                         const editClass = editingId === expense.id ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-100 dark:bg-indigo-900/40' : 'text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30';
                         btns += `<button onclick="window.loadExpenseToForm('${expense.id}')" class="p-1.5 rounded-md transition-colors ${editClass}" ${editingId === expense.id ? 'disabled' : ''}><i data-lucide="pencil" class="w-4 h-4"></i></button>
@@ -732,20 +659,18 @@
             }
         }
 
-        // Globals for HTML onclicks
         window.openModal = (id) => { const e = expenses.find(x => x.id === id); if(e) openModal(e); };
         window.loadExpenseToForm = (id) => { const e = expenses.find(x => x.id === id); if(e) loadExpenseToForm(e); };
         window.softDelete = softDelete;
         window.restoreExpense = restoreExpense;
         window.permanentDelete = permanentDelete;
 
-        // --- REPORTS & CHARTS ---
+        // --- REPORTS ---
         function renderReports() {
             const activeList = expenses.filter(e => !e.isDeleted);
             let filteredList = [];
             const today = new Date();
             let labelText = "";
-
             if (reportPeriod === 'daily') {
                 const todayStr = today.toISOString().split('T')[0];
                 filteredList = activeList.filter(e => e.expenseDate === todayStr);
@@ -760,7 +685,6 @@
                 labelText = "Bu Yılki";
             }
 
-            // Button Styles
             ['daily','monthly','yearly'].forEach(p => {
                 const btn = document.getElementById('btn-report-'+p);
                 if(!btn) return;
@@ -786,7 +710,6 @@
             const isDark = document.documentElement.classList.contains('dark');
             const textColor = isDark ? '#e5e7eb' : '#374151';
             
-            // Pie
             const catCounts = {};
             data.forEach(item => { catCounts[item.category] = (catCounts[item.category] || 0) + item.amount; });
             const ctxCat = document.getElementById('chart-categories');
@@ -802,7 +725,6 @@
                 });
             }
 
-            // Bar
             const dateCounts = {};
             data.sort((a,b) => a.expenseDate.localeCompare(b.expenseDate));
             data.forEach(item => { const d = item.expenseDate||'Tarihsiz'; dateCounts[d] = (dateCounts[d]||0) + item.amount; });
@@ -834,12 +756,12 @@
 
             const firstDay = new Date(year, month, 1);
             const lastDay = new Date(year, month + 1, 0);
-            let startDayIndex = firstDay.getDay(); if (startDayIndex === 0) startDayIndex = 7; startDayIndex -= 1;
+            let startDayIndex = firstDay.getDay(); if (startDayIndex === 0) startDayIndex = 7;
+            startDayIndex -= 1;
 
             const activeExpenses = expenses.filter(e => !e.isDeleted);
 
             for (let i = 0; i < startDayIndex; i++) calendarGrid.innerHTML += `<div></div>`;
-
             for (let i = 1; i <= lastDay.getDate(); i++) {
                 const dayStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
                 const dailyExpenses = activeExpenses.filter(e => e.expenseDate === dayStr);
@@ -849,7 +771,6 @@
                 let className = "calendar-day rounded-lg cursor-pointer";
                 if(dayStr === todayStr) className += " today";
                 if(selectedDate === dayStr) className += " selected";
-                
                 dayDiv.className = className;
                 dayDiv.onclick = () => { selectedDate = dayStr; renderCalendarView(); };
 
@@ -881,9 +802,7 @@
 
             const dateObj = new Date(selectedDate);
             title.innerText = dateObj.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
-
             const dailyList = expenses.filter(e => !e.isDeleted && e.expenseDate === selectedDate);
-
             if (dailyList.length === 0) {
                 container.innerHTML = `<div class="text-center text-gray-400 dark:text-gray-500 py-8"><p>Kayıt yok.</p></div>`;
             } else {
@@ -919,7 +838,8 @@
             const fileDisplay = document.getElementById('file-display-area');
             if (file) {
                 if (file.size > 4 * 1024 * 1024) { alert('Maksimum 4MB!'); e.target.value = ""; return; }
-                fileName = file.name; fileType = file.type;
+                fileName = file.name;
+                fileType = file.type;
                 const reader = new FileReader();
                 reader.onloadend = () => {
                     fileData = reader.result;
@@ -936,7 +856,6 @@
             if (!currentUser) return;
             const btnSubmit = document.getElementById('btn-submit');
             btnSubmit.disabled = true; btnSubmit.innerText = "İşleniyor...";
-
             try {
                 const data = {
                     expenseDate: document.getElementById('expense-date').value,
@@ -947,47 +866,47 @@
                     isRecurring: document.getElementById('is-recurring').checked
                 };
                 
-                const changes = [];
                 if (editingId) {
                     const oldDoc = expenses.find(e => e.id === editingId);
                     const updates = {};
+                    const changes = [];
                     if(oldDoc.amount !== data.amount) { updates.amount = data.amount; changes.push("Tutar güncellendi"); }
-                    // ... (other fields checks omitted for brevity) ...
-                    updates.expenseDate = data.expenseDate; 
+                    updates.expenseDate = data.expenseDate;
                     updates.receiptNo = data.receiptNo;
                     updates.category = data.category;
                     updates.description = data.description;
                     updates.isRecurring = data.isRecurring;
-
                     if (fileData) {
-                        updates.fileName = fileName; updates.fileType = fileType; updates.hasFile = true;
+                        updates.fileName = fileName;
+                        updates.fileType = fileType; updates.hasFile = true;
                         await uploadFileChunks(editingId, fileData); changes.push("Dosya güncellendi");
                     }
-                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'expenses', editingId), updates);
+                    await updateDoc(getUserDocPath('expenses', editingId), updates);
                     await createLog(editingId, changes);
                 } else {
                     const newDoc = { ...data, fileName: fileName || 'Dosya Yok', fileType: fileType, hasFile: !!fileData, createdAt: Date.now(), isDeleted: false };
-                    const docRef = await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'expenses'), newDoc);
+                    const docRef = await addDoc(getUserDataPath('expenses'), newDoc);
                     if (fileData) await uploadFileChunks(docRef.id, fileData);
                 }
                 resetForm();
-            } catch (err) { console.error(err); alert("Hata oluştu"); } 
+            } catch (err) { console.error(err); alert("Hata oluştu: " + err.message); } 
             finally { btnSubmit.disabled = false; btnSubmit.innerHTML = `<span>${editingId?'Değişiklikleri Kaydet':'Gideri Kaydet'}</span>`; }
         }
 
         async function uploadFileChunks(parentId, fullBase64) {
-            const CHUNK_SIZE = 800 * 1024; const chunks = [];
+            const CHUNK_SIZE = 800 * 1024;
+            const chunks = [];
             for (let i = 0; i < fullBase64.length; i += CHUNK_SIZE) chunks.push(fullBase64.slice(i, i + CHUNK_SIZE));
-            const promises = chunks.map((chunkData, index) => addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'expense_chunks'), { parentExpenseId: parentId, index, data: chunkData }));
+            const promises = chunks.map((chunkData, index) => addDoc(getUserDataPath('expense_chunks'), { parentExpenseId: parentId, index, data: chunkData }));
             await Promise.all(promises);
         }
         async function createLog(expenseId, changes) {
             if (!changes.length) return;
-            await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'logs'), { expenseId, changes, timestamp: Date.now(), type: 'update' });
+            await addDoc(getUserDataPath('logs'), { expenseId, changes, timestamp: Date.now(), type: 'update' });
         }
 
         function resetForm() {
-            editingId = null; 
+            editingId = null;
             document.getElementById('expense-form').reset();
             document.getElementById('expense-date').value = new Date().toISOString().split('T')[0];
             fileData = null; fileName = '';
@@ -1014,9 +933,9 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        async function softDelete(id) { if(confirm('Çöp kutusuna taşınsın mı?')) await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'expenses', id), { isDeleted: true }); }
-        async function restoreExpense(id) { await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'expenses', id), { isDeleted: false }); }
-        async function permanentDelete(id) { if(confirm('KALICI olarak silinecek?')) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'expenses', id)); }
+        async function softDelete(id) { if(confirm('Çöp kutusuna taşınsın mı?')) await updateDoc(getUserDocPath('expenses', id), { isDeleted: true }); }
+        async function restoreExpense(id) { await updateDoc(getUserDocPath('expenses', id), { isDeleted: false }); }
+        async function permanentDelete(id) { if(confirm('KALICI olarak silinecek?')) await deleteDoc(getUserDocPath('expenses', id)); }
 
         function formatCurrency(val) { return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(val); }
         function toggleClearFilterBtn() {
@@ -1024,7 +943,7 @@
             if(filterStartDate || filterEndDate) btn.classList.remove('hidden'); else btn.classList.add('hidden');
         }
         function clearFilters() {
-            document.getElementById('filter-start-date').value = ''; 
+            document.getElementById('filter-start-date').value = '';
             document.getElementById('filter-end-date').value = '';
             document.getElementById('search-input').value = '';
             filterStartDate = ''; filterEndDate = ''; searchQuery = '';
@@ -1069,10 +988,8 @@
             const btn = document.getElementById('btn-ocr');
             const status = document.getElementById('ocr-status');
             btn.disabled = true; status.classList.remove('hidden'); status.innerText = "Taranıyor...";
-            
             Tesseract.recognize(fileData, 'tur', { logger: m => status.innerText = `İlerleme: %${Math.round(m.progress * 100)}` })
             .then(({ data: { text } }) => {
-                console.log(text);
                 const receiptMatch = text.match(/(?:Fiş|Fatura|Sıra|Belge)?\s*No[:.\s]*([A-Z0-9-]{2,})/i);
                 if (receiptMatch) document.getElementById('receipt-no').value = receiptMatch[1].trim();
                 
@@ -1114,12 +1031,11 @@
             btnDown.classList.add('hidden');
             modal.classList.remove('hidden');
             setTimeout(() => { modal.classList.remove('opacity-0'); document.getElementById('modal-content').classList.remove('scale-95'); }, 10);
-
             if (expense.hasFile || expense.fileData) {
                 try {
                     let fullString = expense.fileData;
                     if (!fullString) {
-                        const q = query(collection(db, 'artifacts', appId, 'public', 'data', 'expense_chunks'), where('parentExpenseId', '==', expense.id));
+                        const q = query(getUserDataPath('expense_chunks'), where('parentExpenseId', '==', expense.id));
                         const s = await getDocs(q);
                         const chunks = s.docs.map(d => d.data()).sort((a,b)=>a.index-b.index);
                         fullString = chunks.map(c=>c.data).join('');
@@ -1139,7 +1055,7 @@
             }
             
             // Logs
-            const qLogs = query(collection(db, 'artifacts', appId, 'public', 'data', 'logs'), where('expenseId', '==', expense.id));
+            const qLogs = query(getUserDataPath('logs'), where('expenseId', '==', expense.id));
             getDocs(qLogs).then(s => {
                 const logs = s.docs.map(d=>d.data()).sort((a,b)=>b.timestamp-a.timestamp);
                 logCont.innerHTML = logs.map(l => `<div class="p-2 border-b text-sm"><span class="text-gray-500">${new Date(l.timestamp).toLocaleString('tr-TR')}</span><ul class="ml-4 list-disc">${l.changes.map(c=>`<li>${c}</li>`).join('')}</ul></div>`).join('') || "Log yok";
